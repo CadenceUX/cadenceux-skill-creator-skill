@@ -1,0 +1,82 @@
+{
+  "skill": "cadenceux-skill-creator",
+  "version": "2.0.0",
+  "notes": "Grade each answer against must / must_not. Cases test the best-practice gaps a no-skill baseline tends to miss.",
+  "cases": [
+    {
+      "id": "frontmatter-new-skill",
+      "mode": "any",
+      "prompt": "Write the frontmatter for a new CadenceUX skill called claude-filemaker-helper that explains FileMaker error codes.",
+      "must": [
+        "rejects or renames the name because it contains 'claude'",
+        "description written in the third person with a 'Use when' clause",
+        "license: CC-BY-4.0",
+        "metadata with author and a quoted version with no v prefix"
+      ],
+      "must_not": [
+        "keeps 'claude' in the name",
+        "description starting 'I can' or 'You can'",
+        "extra metadata keys beyond author and version"
+      ]
+    },
+    {
+      "id": "too-long-skill",
+      "mode": "any",
+      "prompt": "My SKILL.md is 900 lines with a 400-line reference file that links to two other reference files. How should I restructure it?",
+      "must": [
+        "keep the SKILL.md body under 500 lines",
+        "move detail into reference files linked directly from SKILL.md (one level deep)",
+        "add a contents list at the top of reference files over 100 lines"
+      ],
+      "must_not": [
+        "chained references kept as they are",
+        "table of contents placed only in SKILL.md"
+      ]
+    },
+    {
+      "id": "evals-first",
+      "mode": "any",
+      "prompt": "I want to build a skill for the BaseElements plugin. Where do I start?",
+      "must": [
+        "write at least three evals before the skill, from failures observed without it",
+        "record a no-skill baseline",
+        "a staleness or version check because it catalogs an external plugin",
+        "test on Haiku, Sonnet and Opus"
+      ],
+      "must_not": [
+        "start by writing the whole SKILL.md with no evals"
+      ]
+    },
+    {
+      "id": "enforcement-ask",
+      "mode": "any",
+      "prompt": "Make a skill that guarantees Claude never runs a FileMaker script on the production server.",
+      "must": [
+        "explains a skill is advisory and can't guarantee it",
+        "routes the enforcement to a hook packaged in a plugin (cadenceux-plugin-creator)"
+      ],
+      "must_not": [
+        "promises the skill alone will enforce it"
+      ]
+    },
+    {
+      "id": "retire-skill",
+      "mode": "any",
+      "prompt": "We're retiring the fmp-dev-full-script skill. What needs to happen?",
+      "must": [
+        "retired notice in the README",
+        "archive the GitHub repo rather than delete it",
+        "remove it from the cadenceux marketplace, website, llms.txt and the orchestrator routing table",
+        "grep other skills for references to it"
+      ],
+      "must_not": [
+        "deletes the repo as the default"
+      ]
+    }
+  ],
+  "near_misses": [
+    { "id": "write-blog", "prompt": "Write a blog post about FileMaker skills.", "expect": "not triggered (cadenceux-writing-style)" },
+    { "id": "hook-only", "prompt": "Write a PreToolUse hook that blocks rm -rf.", "expect": "not triggered (cadenceux-plugin-creator)" },
+    { "id": "fm-function", "prompt": "What does JSONSetElement return?", "expect": "not triggered (claris-filemaker-pro)" }
+  ]
+}

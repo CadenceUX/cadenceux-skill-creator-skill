@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "cadenceux-skill-creator",
+  "description": "CadenceUX Skill Creator: builds and maintains Claude skills to Anthropic's skill authoring best practices.",
+  "owner": { "name": "Darrin Southern, CadenceUX", "url": "https://cadenceux.com.au" },
+  "plugins": [
+    {
+      "name": "cadenceux-skill-creator",
+      "source": "./",
+      "description": "Builds, updates and reviews Claude skills to Anthropic's skill authoring best practices: evals first, progressive disclosure, a validator script, Haiku/Sonnet/Opus testing, and packaging.",
+      "category": "development",
+      "displayName": "CadenceUX Skill Creator",
+      "homepage": "https://github.com/CadenceUX/cadenceux-skill-creator-skill"
+    }
+  ]
+}
