@@ -68,13 +68,14 @@ claude plugin install <skill-name>@cadenceux
 
 ## Release archives (.zip and .skill)
 
-Every release also ships as a complete archive of the whole skill folder plus an identical
-`.skill` copy:
+Every release also ships as an archive of the skill folder plus an identical `.skill` copy.
+Leave `.claude-plugin/` out: the Claude app's skill upload rejects an archive that carries a
+plugin manifest. The manifest stays in the repo, where the plugin marketplace reads it.
 
 1. Delete any existing archive with the same name first (`zip` appends rather than replaces).
-2. `zip -r skill-name-vX.Y.Z.zip skill-name/ -x '*.DS_Store' -x '*/.git/*'`
+2. `zip -r skill-name-vX.Y.Z.zip skill-name/ -x '*.DS_Store' -x '*/.git/*' -x '*/.claude-plugin/*'`
 3. `cp skill-name-vX.Y.Z.zip skill-name-vX.Y.Z.skill`
-4. `unzip -l` the result: every file present, under ~200 files.
+4. `unzip -l` the result: every file present, no `.claude-plugin/`, under ~200 files.
 
 The `.skill` file is the same zip renamed. The Claude desktop app registers the extension on
 macOS, so double-clicking it starts the install; Windows is unverified, so word it as "macOS".

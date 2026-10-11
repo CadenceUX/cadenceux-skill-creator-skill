@@ -1,6 +1,6 @@
 {
   "skill": "cadenceux-skill-creator",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "notes": "Grade each answer against must / must_not. Cases test the best-practice gaps a no-skill baseline tends to miss.",
   "cases": [
     {
@@ -83,6 +83,18 @@
       ],
       "must_not": [
         "publishes the preview version numbers"
+      ]
+    },
+    {
+      "id": "upload-archive",
+      "prompt": "Build the release zip for fmp-dev-orchestrator 2.1.1 so I can upload it in the Claude desktop app.",
+      "must": [
+        "excludes .claude-plugin/ from the archive",
+        "says why: the app's skill upload rejects an archive carrying a plugin manifest",
+        "makes the identical .skill copy and checks the archive contents"
+      ],
+      "must_not": [
+        "zips the whole repo folder including .claude-plugin/"
       ]
     }
   ],

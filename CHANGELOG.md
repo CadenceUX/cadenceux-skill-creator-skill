@@ -1,5 +1,13 @@
 # CHANGELOG — cadenceux-skill-creator
 
+## [2.1.1] — 2026-10-11
+
+### Fixed
+
+- **Release archives leave out `.claude-plugin/`.** The Claude app's skill upload rejects an
+  archive that carries a plugin manifest. The zip step now excludes it, and the archive check
+  confirms it's gone. The manifest stays in the repo for the plugin marketplace.
+
 ## [2.1.0] — 2026-10-11
 
 ### Added
