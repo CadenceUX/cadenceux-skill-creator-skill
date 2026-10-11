@@ -1,5 +1,23 @@
 # CHANGELOG — cadenceux-skill-creator
 
+## [2.1.0] — 2026-10-11
+
+### Added
+
+- **Validator: skill update self-check.** Warns when a published skill (one with a `VERSION`
+  file) has no `raw/main/VERSION` self-check (or, for the orchestrator, its stack check).
+- **Validator: preview version numbers.** Fails when a file names a Claris ADT version number;
+  ADT is in Claris's preview programs. Tested against a planted line.
+- Conventions: every published skill carries the self-check and defers to
+  `fmp-dev-orchestrator`'s stack check; preview version numbers are never published; each
+  FileMaker release updates `versions.json` in cadenceux-skills.
+- Release checklist: `versions.json` and the preview-version check. New eval case:
+  preview-versions.
+
+### Verified
+
+- Validator run on all nine CadenceUX skills: clean on both new checks.
+
 ## [2.0.0] — 2026-10-11
 
 Rebuilt against Anthropic's skill authoring best practices

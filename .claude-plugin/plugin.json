@@ -1,7 +1,7 @@
 {
   "name": "cadenceux-skill-creator",
   "displayName": "CadenceUX Skill Creator",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Builds, updates and reviews Claude skills to Anthropic's skill authoring best practices: evals first, progressive disclosure, a validator script, Haiku/Sonnet/Opus testing, and packaging for GitHub, plugin marketplaces and Claude.ai.",
   "author": {
     "name": "Darrin Southern",
@@ -10,6 +10,14 @@
   "homepage": "https://github.com/CadenceUX/cadenceux-skill-creator-skill",
   "repository": "https://github.com/CadenceUX/cadenceux-skill-creator-skill",
   "license": "CC-BY-4.0",
-  "keywords": ["claude-skills", "skill-authoring", "evals", "best-practices", "filemaker"],
-  "skills": ["./"]
+  "keywords": [
+    "claude-skills",
+    "skill-authoring",
+    "evals",
+    "best-practices",
+    "filemaker"
+  ],
+  "skills": [
+    "./"
+  ]
 }

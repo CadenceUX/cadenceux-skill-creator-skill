@@ -203,6 +203,26 @@ def main(folder):
         report("FAIL", f"CHANGELOG.md has no entry for {version} near the top")
     if not (root / "README.md").is_file():
         report("FAIL", "README.md missing")
+    skill_text = (root / "SKILL.md").read_text(encoding="utf-8")
+    if vfile.is_file():
+        if "raw/main/VERSION" in skill_text or "stack_check" in skill_text:
+            report("PASS", "skill update self-check present")
+        else:
+            report("WARN", "no skill update self-check: fetch the repo's raw/main/VERSION once per session "
+                           "(see references/packaging-and-release.md)")
+    # Preview programs: never publish preview version numbers (e.g. Claris ADT builds).
+    preview = re.compile(r"\b(ADT|Agentic Development Toolkit)\b[^\n|]{0,20}\bv?0\.\d+(?:\.\d+)?")
+    hits = []
+    for f in root.rglob("*"):
+        if (f.is_file() and ".git" not in f.parts and f.suffix in (".md", ".json", ".py", ".txt")
+                and f.name != "validate_skill.py" and f.stat().st_size < 2_000_000):
+            for n, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+                if preview.search(line):
+                    hits.append(f"{f.relative_to(root)}:{n}")
+    if hits:
+        report("FAIL", "preview version number published (ADT is in a preview program): " + ", ".join(hits[:5]))
+    else:
+        report("PASS", "no preview version numbers")
     ev = root / "evals" / "evals.json"
     if ev.is_file():
         try:

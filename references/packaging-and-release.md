@@ -19,7 +19,8 @@ Release progress:
 - [ ] README current: what it does, install, attribution
 - [ ] Shipped status checked (bump vs amend)
 - [ ] Pushed to GitHub, tagged vX.Y.Z, GitHub release created
-- [ ] Marketplace entry current (cadenceux-skills)
+- [ ] Marketplace entry current (cadenceux-skills), and `versions.json` there updated
+- [ ] No preview version numbers anywhere (validator check; release notes too)
 - [ ] .zip and .skill archives built and saved to the confirmed folder
 - [ ] Developer told what's live and what still needs a manual upload
 ```

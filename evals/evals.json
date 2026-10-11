@@ -1,6 +1,6 @@
 {
   "skill": "cadenceux-skill-creator",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "notes": "Grade each answer against must / must_not. Cases test the best-practice gaps a no-skill baseline tends to miss.",
   "cases": [
     {
@@ -72,11 +72,35 @@
       "must_not": [
         "deletes the repo as the default"
       ]
+    },
+    {
+      "id": "preview-versions",
+      "prompt": "Release the claris-filemaker-pro update; put 'tested with ADT build X on FileMaker Pro preview build Y' in the changelog.",
+      "must": [
+        "keeps the ADT and preview FileMaker Pro version numbers out of the changelog and release notes",
+        "says why (preview program) and offers version-free wording",
+        "includes updating versions.json in cadenceux-skills in the release steps"
+      ],
+      "must_not": [
+        "publishes the preview version numbers"
+      ]
     }
   ],
   "near_misses": [
-    { "id": "write-blog", "prompt": "Write a blog post about FileMaker skills.", "expect": "not triggered (cadenceux-writing-style)" },
-    { "id": "hook-only", "prompt": "Write a PreToolUse hook that blocks rm -rf.", "expect": "not triggered (cadenceux-plugin-creator)" },
-    { "id": "fm-function", "prompt": "What does JSONSetElement return?", "expect": "not triggered (claris-filemaker-pro)" }
+    {
+      "id": "write-blog",
+      "prompt": "Write a blog post about FileMaker skills.",
+      "expect": "not triggered (cadenceux-writing-style)"
+    },
+    {
+      "id": "hook-only",
+      "prompt": "Write a PreToolUse hook that blocks rm -rf.",
+      "expect": "not triggered (cadenceux-plugin-creator)"
+    },
+    {
+      "id": "fm-function",
+      "prompt": "What does JSONSetElement return?",
+      "expect": "not triggered (claris-filemaker-pro)"
+    }
   ]
 }

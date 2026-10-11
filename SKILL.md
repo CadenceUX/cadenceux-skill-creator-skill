@@ -16,7 +16,7 @@ compatibility: >-
   Cowork.
 metadata:
   author: Darrin Southern, CadenceUX
-  version: "2.0.0"
+  version: "2.1.0"
 ---
 
 # CadenceUX Skill Creator
@@ -249,6 +249,13 @@ On the first skill-building request of a session, once:
 - FileMaker skills assume the Claris Agentic Development Toolkit (ADT) may be installed: where
   ADT can read or change the file directly, defer to it rather than generating clipboard XML
   or copy-paste snippets.
+- Every published skill carries a skill update self-check (the repo's `raw/main/VERSION`, once
+  per session) that defers to `fmp-dev-orchestrator`'s stack check when that's installed.
+- Preview programs: never publish preview version numbers (Claris ADT builds, preview FileMaker
+  Pro builds) in skill files, changelogs, evals or release notes. Report them to the user from
+  their own install only. The validator fails on an ADT version number.
+- On every FileMaker skill release, update `versions.json` in `CadenceUX/cadenceux-skills`
+  (the skill's new version; `tested_with` for public products only).
 
 ## Relationship to other skills
 

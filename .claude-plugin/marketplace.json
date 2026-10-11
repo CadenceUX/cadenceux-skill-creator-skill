@@ -2,7 +2,10 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "cadenceux-skill-creator",
   "description": "CadenceUX Skill Creator: builds and maintains Claude skills to Anthropic's skill authoring best practices.",
-  "owner": { "name": "Darrin Southern, CadenceUX", "url": "https://cadenceux.com.au" },
+  "owner": {
+    "name": "Darrin Southern, CadenceUX",
+    "url": "https://cadenceux.com.au"
+  },
   "plugins": [
     {
       "name": "cadenceux-skill-creator",
