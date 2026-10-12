@@ -1,6 +1,6 @@
 {
   "skill": "cadenceux-skill-creator",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "notes": "Grade each answer against must / must_not. Cases test the best-practice gaps a no-skill baseline tends to miss.",
   "cases": [
     {
@@ -89,12 +89,28 @@
       "id": "upload-archive",
       "prompt": "Build the release zip for fmp-dev-orchestrator 2.1.1 so I can upload it in the Claude desktop app.",
       "must": [
-        "excludes .claude-plugin/ from the archive",
-        "says why: the app's skill upload rejects an archive carrying a plugin manifest",
-        "makes the identical .skill copy and checks the archive contents"
+        "builds from a clean checkout of the release tag, not a working folder",
+        "excludes .claude-plugin/ from the archive, and says why (the app's skill upload rejects a plugin manifest)",
+        "the archive carries VERSION, CHANGELOG.md and README.md",
+        "makes the identical .skill copy and runs validate_skill.py --archive"
       ],
       "must_not": [
-        "zips the whole repo folder including .claude-plugin/"
+        "zips the whole repo folder including .claude-plugin/",
+        "zips a local working copy without checking it carries VERSION, CHANGELOG.md and README.md"
+      ]
+    },
+    {
+      "id": "repackage-release",
+      "prompt": "The goya-be-plugin 1.4.0 release zip on GitHub is missing CHANGELOG.md and VERSION, but the repo has them. Fix it.",
+      "must": [
+        "rebuilds the archive from the v1.4.0 tag (clean checkout)",
+        "checks it with validate_skill.py --archive",
+        "replaces the release's .zip and .skill attachments (gh release upload --clobber)",
+        "keeps version 1.4.0: the skill's files haven't changed"
+      ],
+      "must_not": [
+        "bumps to 1.4.1 for a packaging-only fix",
+        "edits or re-tags the repo"
       ]
     }
   ],

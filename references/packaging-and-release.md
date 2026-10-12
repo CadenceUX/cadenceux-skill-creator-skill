@@ -21,7 +21,8 @@ Release progress:
 - [ ] Pushed to GitHub, tagged vX.Y.Z, GitHub release created
 - [ ] Marketplace entry current (cadenceux-skills), and `versions.json` there updated
 - [ ] No preview version numbers anywhere (validator check; release notes too)
-- [ ] .zip and .skill archives built and saved to the confirmed folder
+- [ ] .zip and .skill built from the release tag, `validate_skill.py --archive` clean, attached
+      to the GitHub release and saved to the confirmed folder
 - [ ] Developer told what's live and what still needs a manual upload
 ```
 
@@ -69,13 +70,24 @@ claude plugin install <skill-name>@cadenceux
 ## Release archives (.zip and .skill)
 
 Every release also ships as an archive of the skill folder plus an identical `.skill` copy.
-Leave `.claude-plugin/` out: the Claude app's skill upload rejects an archive that carries a
-plugin manifest. The manifest stays in the repo, where the plugin marketplace reads it.
+Build it from a clean checkout of the release tag, never from a working folder: a working copy
+can be missing files. On 2026-10-12, nine releases had shipped without `VERSION`,
+`CHANGELOG.md` and `README.md` because they were zipped from stripped local copies.
 
-1. Delete any existing archive with the same name first (`zip` appends rather than replaces).
-2. `zip -r skill-name-vX.Y.Z.zip skill-name/ -x '*.DS_Store' -x '*/.git/*' -x '*/.claude-plugin/*'`
-3. `cp skill-name-vX.Y.Z.zip skill-name-vX.Y.Z.skill`
-4. `unzip -l` the result: every file present, no `.claude-plugin/`, under ~200 files.
+Leave out `.claude-plugin/` (the Claude app's skill upload rejects an archive that carries a
+plugin manifest; the marketplace reads it from the repo), `.git/`, `.gitignore` and
+`maintainer/` (build tools, not part of the skill's job).
+
+1. Tag and push the release first, then check out the tag into a temporary folder named after
+   the skill:
+   `git clone --depth 1 --branch vX.Y.Z https://github.com/CadenceUX/<repo>.git skill-name`
+2. Delete any existing archive with the same name (`zip` appends rather than replaces).
+3. `zip -r skill-name-vX.Y.Z.zip skill-name/ -x '*.DS_Store' -x '*/.git/*' -x '*/.claude-plugin/*' -x '*/.gitignore' -x '*/maintainer/*'`
+4. `cp skill-name-vX.Y.Z.zip skill-name-vX.Y.Z.skill`
+5. `python3 scripts/validate_skill.py --archive skill-name-vX.Y.Z.zip` and continue only when it
+   reports clean: `SKILL.md`, `VERSION`, `CHANGELOG.md` and `README.md` present, versions
+   matching, no `.claude-plugin/`, the `.skill` copy identical.
+6. Attach both to the GitHub release (`gh release upload vX.Y.Z <files> --clobber`).
 
 The `.skill` file is the same zip renamed. The Claude desktop app registers the extension on
 macOS, so double-clicking it starts the install; Windows is unverified, so word it as "macOS".
@@ -84,6 +96,12 @@ In a browser, the route is Customize → Skills → upload the zip.
 Save archives to the developer's release folder (`~/Desktop/Skill Masters` on Darrin's Mac).
 Confirm the folder rather than assuming it on a new machine. Flag older archives of the same
 skill sitting there; they're what gets uploaded by mistake.
+
+**Repackaging a shipped release.** If a release's archive is wrong but the tagged repo is
+right (a file missing from the zip, an extra file in it), rebuild the archive from that tag,
+check it with `--archive` and replace the release's attachments with `--clobber`. Keep the
+version: the skill's files haven't changed. Note the date in the release notes, and rebuild any
+bundle or download page that carries the old archive.
 
 ## Amending an unshipped version
 

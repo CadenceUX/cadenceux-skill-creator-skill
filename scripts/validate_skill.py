@@ -3,6 +3,7 @@
 
 Usage:
     python3 scripts/validate_skill.py /path/to/skill-folder
+    python3 scripts/validate_skill.py --archive /path/to/skill-name-vX.Y.Z.zip
 
 Prints one line per check (PASS, WARN or FAIL, with the fix) and exits 1 if anything failed.
 Needs only the Python standard library. If PyYAML is installed it is used to parse the
@@ -11,6 +12,7 @@ frontmatter; otherwise a small built-in parser handles the CadenceUX frontmatter
 import json
 import re
 import sys
+import zipfile
 from pathlib import Path
 
 # Limits published in Anthropic's skill authoring docs.
@@ -242,8 +244,86 @@ def main(folder):
     return 1 if fails else 0
 
 
+def check_archive(path):
+    """Check a release archive (.zip or .skill) built for upload and for the GitHub release."""
+    arc = Path(path).expanduser().resolve()
+    if not arc.is_file():
+        print(f"FAIL  No archive at {arc}")
+        return 1
+    try:
+        z = zipfile.ZipFile(arc)
+    except zipfile.BadZipFile:
+        print(f"FAIL  {arc.name} is not a zip archive")
+        return 1
+    names = [n for n in z.namelist() if not n.endswith("/")]
+    tops = {n.split("/", 1)[0] for n in z.namelist()}
+    if len(tops) != 1 or any("/" not in n for n in names):
+        report("FAIL", f"archive must hold exactly one top-level folder (found {sorted(tops)}); "
+                       "zip the skill folder itself, not its contents")
+        return finish()
+    top = tops.pop()
+    report("PASS", f"one top-level folder: {top}/")
+    inside = {n.split("/", 1)[1] for n in names}
+
+    # The files a published skill must carry. A working folder can be missing them (on
+    # 2026-10-12 nine releases shipped without VERSION, CHANGELOG.md and README.md because
+    # they were zipped from stripped local copies), so build from the release tag.
+    for required in ("SKILL.md", "VERSION", "CHANGELOG.md", "README.md"):
+        report("PASS" if required in inside else "FAIL",
+               f"{required} {'present' if required in inside else 'missing: rebuild from a clean checkout of the release tag'}")
+
+    for bad, why in ((".claude-plugin/", "the Claude app's skill upload rejects a plugin manifest"),
+                     (".git/", "repository internals"),
+                     (".gitignore", "repository file, not part of the skill")):
+        hit = [n for n in inside if n == bad or n.startswith(bad)]
+        report("FAIL" if hit else "PASS", f"{bad} {'included: exclude it (' + why + ')' if hit else 'not included'}")
+    ds = [n for n in inside if n.endswith(".DS_Store")]
+    report("WARN" if ds else "PASS", f".DS_Store {'included (' + str(len(ds)) + '): exclude it' if ds else 'not included'}")
+    mt = [n for n in inside if n.startswith("maintainer/")]
+    report("WARN" if mt else "PASS",
+           f"maintainer/ {'included: build tools are not part of the skill; exclude it' if mt else 'not included'}")
+
+    version = None
+    if "SKILL.md" in inside:
+        try:
+            fm, _ = parse_frontmatter(z.read(f"{top}/SKILL.md").decode("utf-8"))
+            version = str((fm.get("metadata") or {}).get("version", "")).strip() or None
+            if fm.get("name") and fm.get("name") != top:
+                report("WARN", f"folder '{top}' differs from name '{fm.get('name')}'")
+        except (ValueError, UnicodeDecodeError) as e:
+            report("FAIL", f"SKILL.md frontmatter unreadable: {e}")
+    if version and "VERSION" in inside:
+        v = z.read(f"{top}/VERSION").decode("utf-8").strip()
+        report("PASS" if v == version else "FAIL", f"VERSION '{v}' vs metadata.version '{version}'")
+    if version and "CHANGELOG.md" in inside:
+        head = z.read(f"{top}/CHANGELOG.md").decode("utf-8", "replace")[:3000]
+        report("PASS" if version in head else "FAIL", f"CHANGELOG.md {'has' if version in head else 'has no'} entry for {version} near the top")
+    if version:
+        stem_ok = arc.stem.endswith(f"-v{version}")
+        report("PASS" if stem_ok else "WARN", f"archive name {'matches' if stem_ok else 'does not end with'} -v{version}")
+
+    level = "FAIL" if len(names) >= FILE_COUNT_SOFT_MAX else ("WARN" if len(names) >= FILE_COUNT_WARN else "PASS")
+    report(level, f"{len(names)} files (uploads reported to fail above ~{FILE_COUNT_SOFT_MAX})")
+
+    twin = arc.with_suffix(".skill" if arc.suffix == ".zip" else ".zip")
+    if twin.is_file():
+        same = twin.read_bytes() == arc.read_bytes()
+        report("PASS" if same else "FAIL", f"{twin.name} {'is identical' if same else 'differs: copy the zip again'}")
+    else:
+        report("WARN", f"no {twin.name} beside it (the release ships both)")
+    return finish()
+
+
+def finish():
+    fails, warns = results.count("FAIL"), results.count("WARN")
+    print(f"\n{'CLEAN' if not fails else 'NOT CLEAN'}: {fails} fail, {warns} warn")
+    return 1 if fails else 0
+
+
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) == 3 and sys.argv[1] == "--archive":
+        sys.exit(check_archive(sys.argv[2]))
+    if len(sys.argv) != 2 or sys.argv[1].startswith("-"):
         print(__doc__)
         sys.exit(2)
     sys.exit(main(sys.argv[1]))

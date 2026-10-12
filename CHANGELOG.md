@@ -1,5 +1,33 @@
 # CHANGELOG — cadenceux-skill-creator
 
+## [2.1.2] — 2026-10-12
+
+### Fixed
+
+- **Release archives are built from the release tag.** On 2026-10-12, nine CadenceUX releases
+  had shipped without `VERSION`, `CHANGELOG.md` and `README.md`, because the archives were
+  zipped from stripped local copies instead of the repo. The packaging steps now check out the
+  tag into a clean folder before zipping, and leave out `.gitignore` and `maintainer/` as well
+  as `.claude-plugin/`.
+- SKILL.md's packaging step now gives the reason `.claude-plugin/` stays out of the archive
+  (Haiku left it out of its answer when the reason was only in the reference file).
+
+### Added
+
+- **Validator: `--archive` mode.** `python3 scripts/validate_skill.py --archive <file>.zip`
+  fails an archive missing `SKILL.md`, `VERSION`, `CHANGELOG.md` or `README.md`, or carrying
+  `.claude-plugin/`, `.git/` or `.gitignore`; checks `VERSION` against `metadata.version` and the
+  CHANGELOG entry; and confirms the `.skill` copy is identical.
+- **Repackaging a shipped release:** rebuild from the tag and replace the release attachments,
+  keeping the version, when only the archive was wrong.
+- Eval cases: `upload-archive` updated; new `repackage-release`. Results:
+  `evals/results-2026-10-12-v2.1.2.md` (Haiku 5.5, Sonnet 5.5, Opus 5.5 and a no-skill baseline).
+
+### Verified
+
+- `--archive` run on the nine rebuilt release archives (clean) and on the old ones (fails on
+  the three missing files), and on a test archive carrying `.claude-plugin/` (fails).
+
 ## [2.1.1] — 2026-10-11
 
 ### Fixed

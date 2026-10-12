@@ -16,7 +16,7 @@ compatibility: >-
   Cowork.
 metadata:
   author: Darrin Southern, CadenceUX
-  version: "2.1.1"
+  version: "2.1.2"
 ---
 
 # CadenceUX Skill Creator
@@ -217,6 +217,12 @@ cases yourself and skip the baseline. Full procedure:
 GitHub repo, `VERSION`, tagged release, `plugin.json`, the `cadenceux` marketplace entry,
 release `.zip` and `.skill` archives, and the rule for amending an unshipped version:
 [references/packaging-and-release.md](references/packaging-and-release.md).
+
+Build the release archives from a clean checkout of the tag, never a working folder, and run
+`python3 scripts/validate_skill.py --archive <file>.zip` on each before attaching it: it fails
+an archive missing `VERSION`, `CHANGELOG.md` or `README.md`, or carrying `.claude-plugin/`
+(leave the manifest out and say why: the Claude app's skill upload rejects an archive with a
+plugin manifest; the marketplace reads it from the repo).
 
 Releases are export-only from here. This skill can produce the files and push to GitHub; it
 can't install anything into Claude.ai. Say so rather than reporting a skill as "installed".
