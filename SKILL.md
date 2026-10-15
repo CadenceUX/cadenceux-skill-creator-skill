@@ -16,7 +16,7 @@ compatibility: >-
   Cowork.
 metadata:
   author: Darrin Southern, CadenceUX
-  version: "2.1.2"
+  version: "2.1.3"
 ---
 
 # CadenceUX Skill Creator
@@ -251,7 +251,8 @@ On the first skill-building request of a session, once:
 - The SKILL.md `## Licence` section and the README both end with:
   `Built and maintained by [Darrin Southern](https://www.linkedin.com/in/darrin-southern/) from [CadenceUX](https://cadenceux.com.au).`
 - README install section: the `cadenceux` marketplace first, then the double-click `.skill`
-  file (macOS), then the Customize → Skills zip upload.
+  file (macOS), then the Customize → Skills zip upload, both linked as
+  `releases/latest/download/<name>.skill|zip`, with a note not to use GitHub's source zips.
 - FileMaker skills assume the Claris Agentic Development Toolkit (ADT) may be installed: where
   ADT can read or change the file directly, defer to it rather than generating clipboard XML
   or copy-paste snippets.

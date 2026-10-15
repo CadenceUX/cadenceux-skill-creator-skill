@@ -1,5 +1,35 @@
 # CHANGELOG — cadenceux-skill-creator
 
+## [2.1.3] — 2026-10-16
+
+Packaging fix for GitHub installs, using `cadenceux-skill-creator` 2.1.2. Packaging steps updated to match (below); no other change.
+
+### Fixed
+
+- **GitHub source zips no longer install as a plugin.** The repository root carries
+  `.claude-plugin/plugin.json` for the plugin marketplace, so GitHub's **Code → Download
+  ZIP** and a release's **Source code (zip)** looked like a plugin to the Claude desktop app,
+  which pointed to the plugin installer instead of installing the skill. A new `.gitattributes`
+  leaves `.claude-plugin/`, `evals/`, `maintainer/` and the git dotfiles out of those archives.
+  The marketplace is unaffected: it reads the repository, not the archive.
+
+### Changed
+
+- README install section links straight to the latest release's `.skill` and `.zip`, and
+  warns against the source zips.
+- Each release now also attaches unversioned copies (`<name>.skill`, `<name>.zip`) so the
+  README's `releases/latest/download/…` links don't change between versions.
+- **Packaging steps** (`references/packaging-and-release.md`, the README convention in
+  SKILL.md): add the `.gitattributes` export-ignore to every skill repo, leave
+  `.gitattributes` out of release archives, attach unversioned copies to every release and
+  link them from the README, and say why `.claude-plugin/` is excluded right at the zip step.
+
+### Verified
+
+- `validate_skill.py` clean on the folder and on both release archives.
+- Evals: `upload-archive` and `repackage-release` re-run on Haiku 5.5, Sonnet 5.5 and Opus 5.5
+  (`evals/results-2026-10-16-v2.1.3.md`): 5 of 6 pass; Haiku partial on `upload-archive`.
+
 ## [2.1.2] — 2026-10-12
 
 ### Fixed

@@ -31,7 +31,7 @@ The reference example of a skill built this way is
 
 ## Install
 
-**Claude Code (plugin):** this repository is its own one-plugin marketplace.
+**Claude Code** (from the `cadenceux-skill-creator` plugin marketplace):
 
 ```bash
 claude plugin marketplace add https://github.com/CadenceUX/cadenceux-skill-creator-skill.git
@@ -39,13 +39,18 @@ claude plugin install cadenceux-skill-creator@cadenceux-skill-creator
 ```
 
 **claude.ai and Cowork:** Customize → Plugins → Add marketplace from GitHub →
-`CadenceUX/cadenceux-skill-creator-skill`.
+`CadenceUX/cadenceux-skill-creator-skill`, then install **cadenceux-skill-creator**.
 
-**Claude desktop app (macOS):** download the `.skill` file from the
-[latest release](https://github.com/CadenceUX/cadenceux-skill-creator-skill/releases) and
+**Claude desktop app (macOS):** download [`cadenceux-skill-creator.skill`](https://github.com/CadenceUX/cadenceux-skill-creator-skill/releases/latest/download/cadenceux-skill-creator.skill) and
 double-click it.
 
-**Claude.ai in a browser:** Customize → Skills → upload the release `.zip`.
+**Claude.ai in a browser, as a single skill:** Customize → Skills → upload
+[`cadenceux-skill-creator.zip`](https://github.com/CadenceUX/cadenceux-skill-creator-skill/releases/latest/download/cadenceux-skill-creator.zip).
+
+> Both files are attached to the latest [release](https://github.com/CadenceUX/cadenceux-skill-creator-skill/releases).
+> Don't use GitHub's green **Code → Download ZIP** button or a release's **Source code (zip)**:
+> those are snapshots of the repository, not a packaged skill, and Claude won't install them
+> as one.
 
 ## Files
 

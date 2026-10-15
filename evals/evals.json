@@ -1,6 +1,6 @@
 {
   "skill": "cadenceux-skill-creator",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "notes": "Grade each answer against must / must_not. Cases test the best-practice gaps a no-skill baseline tends to miss.",
   "cases": [
     {
@@ -92,7 +92,8 @@
         "builds from a clean checkout of the release tag, not a working folder",
         "excludes .claude-plugin/ from the archive, and says why (the app's skill upload rejects a plugin manifest)",
         "the archive carries VERSION, CHANGELOG.md and README.md",
-        "makes the identical .skill copy and runs validate_skill.py --archive"
+        "makes the identical .skill copy and runs validate_skill.py --archive",
+        "also leaves .gitattributes out of the archive"
       ],
       "must_not": [
         "zips the whole repo folder including .claude-plugin/",
@@ -106,7 +107,8 @@
         "rebuilds the archive from the v1.4.0 tag (clean checkout)",
         "checks it with validate_skill.py --archive",
         "replaces the release's .zip and .skill attachments (gh release upload --clobber)",
-        "keeps version 1.4.0: the skill's files haven't changed"
+        "keeps version 1.4.0: the skill's files haven't changed",
+        "knows the unversioned goya-be-plugin.zip / .skill copies only matter on the latest release"
       ],
       "must_not": [
         "bumps to 1.4.1 for a packaging-only fix",
