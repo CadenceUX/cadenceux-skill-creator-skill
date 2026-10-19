@@ -3,7 +3,11 @@
 
 Usage:
     python3 scripts/validate_skill.py /path/to/skill-folder
+    python3 scripts/validate_skill.py --own /path/to/skill-folder
     python3 scripts/validate_skill.py --archive /path/to/skill-name-vX.Y.Z.zip
+
+--own is for a developer's own skill: it drops the CadenceUX-only checks (CC-BY-4.0 licence,
+cadenceux marketplace wording) and warns if CadenceUX branding has leaked into the skill.
 
 Prints one line per check (PASS, WARN or FAIL, with the fix) and exits 1 if anything failed.
 Needs only the Python standard library. If PyYAML is installed it is used to parse the
@@ -86,7 +90,7 @@ def _mini_yaml(raw):
     return data
 
 
-def main(folder):
+def main(folder, own=False):
     root = Path(folder).resolve()
     skill_md = root / "SKILL.md"
     if not skill_md.is_file():
@@ -145,7 +149,10 @@ def main(folder):
     else:
         report("PASS", f"compatibility ({len(comp)} chars)")
 
-    if str(fm.get("license", "")) != "CC-BY-4.0":
+    if own:
+        if not fm.get("license"):
+            report("WARN", "no license field: add the licence the developer chose (and a LICENSE file)")
+    elif str(fm.get("license", "")) != "CC-BY-4.0":
         report("WARN", "license should be CC-BY-4.0 (CadenceUX standard)")
     meta = fm.get("metadata") or {}
     version = str(meta.get("version", "")) if isinstance(meta, dict) else ""
@@ -199,7 +206,8 @@ def main(folder):
         except json.JSONDecodeError as e:
             report("FAIL", f"plugin.json is not valid JSON: {e}")
     else:
-        report("WARN", "no .claude-plugin/plugin.json (needed for the cadenceux marketplace)")
+        report("WARN", "no .claude-plugin/plugin.json (needed to install as a Claude Code plugin)"
+               if own else "no .claude-plugin/plugin.json (needed for the cadenceux marketplace)")
     cl = root / "CHANGELOG.md"
     if cl.is_file() and version and version not in cl.read_text(encoding="utf-8")[:4000]:
         report("FAIL", f"CHANGELOG.md has no entry for {version} near the top")
@@ -225,6 +233,21 @@ def main(folder):
         report("FAIL", "preview version number published (ADT is in a preview program): " + ", ".join(hits[:5]))
     else:
         report("PASS", "no preview version numbers")
+    if own:
+        # A developer's own skill must not carry CadenceUX's name, attribution or prefixes.
+        brand = re.compile(r"Darrin Southern|cadenceux\.com\.au|linkedin\.com/in/darrin-southern|Built and maintained by .*CadenceUX")
+        leaks = []
+        for f in [skill_md, root / "README.md", root / "LICENSE", root / ".claude-plugin" / "plugin.json"]:
+            if f.is_file():
+                for n, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+                    if brand.search(line):
+                        leaks.append(f"{f.relative_to(root)}:{n}")
+        if leaks:
+            report("WARN", "CadenceUX branding in a developer's own skill: " + ", ".join(leaks[:5]))
+        if str(fm.get("name", "")).startswith(("cadenceux-", "claris-")):
+            report("WARN", f"name '{fm.get('name')}' uses a CadenceUX prefix; use the developer's own (or none)")
+        if not leaks and not str(fm.get("name", "")).startswith(("cadenceux-", "claris-")):
+            report("PASS", "no CadenceUX branding")
     ev = root / "evals" / "evals.json"
     if ev.is_file():
         try:
@@ -323,6 +346,8 @@ def finish():
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "--archive":
         sys.exit(check_archive(sys.argv[2]))
+    if len(sys.argv) == 3 and sys.argv[1] == "--own":
+        sys.exit(main(sys.argv[2], own=True))
     if len(sys.argv) != 2 or sys.argv[1].startswith("-"):
         print(__doc__)
         sys.exit(2)

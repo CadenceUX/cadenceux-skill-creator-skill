@@ -1,5 +1,28 @@
 # CHANGELOG — cadenceux-skill-creator
 
+## [2.2.0] — 2026-10-19
+
+A developer's own skills, and a hand-off to `cadenceux-github` for publishing them.
+
+### Added
+
+- **Building a developer's own skill.** Step 2 now asks first whose skill it is. For a
+  developer's own skill it collects their author, prefix and licence, leaves every CadenceUX
+  convention out (prefixes, attribution line, `cadenceux` marketplace, `versions.json`, release
+  folder) and keeps the preview rule and a self-version check pointing at their own repo.
+- **`validate_skill.py --own`.** Drops the CadenceUX-only checks and warns when CadenceUX
+  branding or prefixes have leaked into a developer's skill.
+- **Hand-off to `cadenceux-github`.** Step 8 sends a developer's own skill there to publish;
+  updates start here (content, evals) and ship there. Declared in both skills' "Relationship
+  to other skills".
+
+### Checked
+
+- Validator run on this skill (default mode), on `cadenceux-github` with `--own` (branding
+  warnings, as expected for a CadenceUX skill) and on a developer fixture with an MIT licence
+  (clean). Eval `own-skill` run on Haiku, Sonnet and Opus: results in
+  `evals/results-2026-10-19-v2.2.0.md`.
+
 ## [2.1.3] — 2026-10-16
 
 Packaging fix for GitHub installs, using `cadenceux-skill-creator` 2.1.2. Packaging steps updated to match (below); no other change.

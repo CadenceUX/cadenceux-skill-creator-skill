@@ -1,8 +1,8 @@
 ---
 name: cadenceux-skill-creator
 description: >-
-  Creates, updates and reviews Claude skills for CadenceUX and Claris FileMaker projects to
-  Anthropic's skill authoring best practices. Covers the full loop: capture intent, write evals
+  Creates, updates and reviews Claude skills for CadenceUX, Claris FileMaker projects and a
+  developer's own skills, to Anthropic's skill authoring best practices. Covers the full loop: capture intent, write evals
   first, draft SKILL.md with progressive disclosure, test on Haiku, Sonnet and Opus against a
   no-skill baseline, iterate, then package for GitHub, the cadenceux plugin marketplace and
   Claude.ai. Includes staleness checks for skills that catalog a vendor's plugin, API or product.
@@ -16,7 +16,7 @@ compatibility: >-
   Cowork.
 metadata:
   author: Darrin Southern, CadenceUX
-  version: "2.1.3"
+  version: "2.2.0"
 ---
 
 # CadenceUX Skill Creator
@@ -69,6 +69,10 @@ upload. Details: [references/execution-surfaces.md](references/execution-surface
 
 ## 2. Capture intent
 
+**First, whose skill is it?** A CadenceUX skill, or the developer's own? Ask once, before
+anything is named; the answer decides the author, prefix, licence and release path. For the
+developer's own skill, follow [Building a developer's own skill](#building-a-developers-own-skill).
+
 If the conversation already holds the workflow ("turn this into a skill"), extract the answers
 from it first: tools used, steps, corrections, input and output formats. Then ask only for the
 gaps:
@@ -98,7 +102,7 @@ Format, grading and running across models: [references/testing-and-evals.md](ref
 
 ## 4. Draft the skill
 
-### Frontmatter (CadenceUX standard)
+### Frontmatter (CadenceUX standard; a developer's own skill uses their author and licence)
 
 ```yaml
 ---
@@ -214,6 +218,10 @@ cases yourself and skip the baseline. Full procedure:
 
 ## 8. Package and publish
 
+**A developer's own skill:** hand over to `cadenceux-github`, which publishes from their own
+GitHub account (account setup, client-material scrub, repo, release archives, install check).
+The rest of this section is CadenceUX's release path.
+
 GitHub repo, `VERSION`, tagged release, `plugin.json`, the `cadenceux` marketplace entry,
 release `.zip` and `.skill` archives, and the rule for amending an unshipped version:
 [references/packaging-and-release.md](references/packaging-and-release.md).
@@ -244,7 +252,25 @@ On the first skill-building request of a session, once:
    > https://github.com/CadenceUX/cadenceux-skill-creator-skill/releases
 3. If the fetch fails, skip silently. Don't repeat the notice in the same session.
 
-## CadenceUX conventions
+## Building a developer's own skill
+
+Everything in steps 1–7 applies unchanged: evals first, a no-skill baseline, the validator,
+three models. What changes is whose name is on it.
+
+- **Collect their details once:** author name and URL, a name prefix if they want one (none is
+  fine), and a licence (CC BY 4.0 for a mostly-prose skill, MIT for mostly scripts). Use them in
+  `metadata.author`, the README, `LICENSE` and `plugin.json`, and set `license:` to match.
+- **Leave out every CadenceUX convention below:** the `cadenceux-` and `claris-` prefixes, the
+  CadenceUX attribution line, the `cadenceux` marketplace, `versions.json` and the release
+  folder. Write in the developer's own English.
+- **Keep:** the preview rule (never publish preview version numbers), and a self-version check
+  pointing at their own repo's `raw/main/VERSION` once the repo exists.
+- **Validate with `--own`:** `python3 scripts/validate_skill.py --own /path/to/skill` drops the
+  CadenceUX-only warnings and warns if CadenceUX branding has leaked in.
+- **Publish** with `cadenceux-github` (step 8). An update starts here (content, evals) and
+  ships there.
+
+## CadenceUX conventions (CadenceUX skills only)
 
 - `cadenceux-` prefix for brand and workflow skills; `claris-` for FileMaker reference skills.
 - Australian English in everything user-facing. "CadenceUX" is one word.
@@ -269,6 +295,11 @@ On the first skill-building request of a session, once:
 - **claris-filemaker-pro** — the reference implementation of these practices.
 - **cadenceux-sonnet-craft** / **cadenceux-fable-mode** — how rigorously a session works; this
   skill owns what a good skill looks like. It defers to them and keeps no copy of their rules.
+- **cadenceux-github** — publishes a developer's own skill from their GitHub account and
+  reviews their published skills for unreleased changes. This skill builds and tests, then
+  hands over; an update's content and evals start here and ship there; a review's content
+  questions come back here. Both describe release archives and the `.claude-plugin/`
+  exclusion: when the Claude app's upload rules change, update both.
 - **cadenceux-plugin-creator** — owns the plugin container: hooks, install verbs, marketplace
   mechanics. It defers here for any SKILL.md a plugin bundles; this skill routes enforcement
   asks there.

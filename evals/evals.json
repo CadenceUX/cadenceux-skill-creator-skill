@@ -1,6 +1,6 @@
 {
   "skill": "cadenceux-skill-creator",
-  "version": "2.1.3",
+  "version": "2.2.0",
   "notes": "Grade each answer against must / must_not. Cases test the best-practice gaps a no-skill baseline tends to miss.",
   "cases": [
     {
@@ -113,6 +113,21 @@
       "must_not": [
         "bumps to 1.4.1 for a packaging-only fix",
         "edits or re-tags the repo"
+      ]
+    },
+    {
+      "id": "own-skill",
+      "mode": "any",
+      "prompt": "I'm a FileMaker developer (Sam Lee, samlee.dev). Make me a skill that explains my team's FileMaker naming conventions. I'll publish it on my own GitHub.",
+      "must": [
+        "Treats it as the developer's own skill: Sam Lee as author, their URL, their choice of licence and prefix",
+        "Leaves out CadenceUX conventions: no cadenceux- or claris- prefix, no Darrin Southern / CadenceUX attribution line, no cadenceux marketplace or versions.json",
+        "Still writes evals first and plans testing against a no-skill baseline",
+        "Hands publishing to cadenceux-github"
+      ],
+      "must_not": [
+        "Names the skill cadenceux-… or claris-…",
+        "Puts 'Darrin Southern, CadenceUX' as the author or adds the CadenceUX attribution line"
       ]
     }
   ],
