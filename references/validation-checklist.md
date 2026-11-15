@@ -39,6 +39,12 @@ through the judgement items.
 - [ ] Other skills cited by dated events and durable facts, not live counts
 - [ ] Dependencies named exactly, with known look-alikes named as non-sources
 - [ ] No unreleased or private-beta product named in a public skill
+- [ ] (auto) No secrets in any file, evals and results included
+- [ ] (auto) No client names, server URLs, IP addresses, accounts, account or property IDs, or
+      personal paths; examples and evals use reserved placeholders; any `sensitive-allow.txt`
+      entry is a reviewed fictional or public value
+- [ ] (auto) `## Requirements` lists every path, connector, API, variable, CLI and account
+      the skill reaches, with what each is for and which surfaces it needs
 - [ ] Anything that must be guaranteed was routed to a plugin hook, not promised here
 - [ ] Deliberate overlaps declared in both skills' "Relationship to other skills"
 - [ ] `## Licence` ends with the attribution line; Australian English; "CadenceUX" one word

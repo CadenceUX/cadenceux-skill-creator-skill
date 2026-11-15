@@ -103,8 +103,8 @@ The `.skill` file is the same zip renamed. The Claude desktop app registers the 
 macOS, so double-clicking it starts the install; Windows is unverified, so word it as "macOS".
 In a browser, the route is Customize → Skills → upload the zip.
 
-Save archives to the developer's release folder (`~/Desktop/Skill Masters` on Darrin's Mac).
-Confirm the folder rather than assuming it on a new machine. Flag older archives of the same
+Save archives to the developer's release folder. Ask where it is, or check where the
+previous release's archives were saved; never assume a path. Flag older archives of the same
 skill sitting there; they're what gets uploaded by mistake.
 
 **Repackaging a shipped release.** If a release's archive is wrong but the tagged repo is

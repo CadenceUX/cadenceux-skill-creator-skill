@@ -16,7 +16,7 @@ compatibility: >-
   Cowork.
 metadata:
   author: Darrin Southern, CadenceUX
-  version: "2.3.0"
+  version: "2.4.0"
 ---
 
 # CadenceUX Skill Creator
@@ -25,6 +25,21 @@ Builds and maintains Claude skills to Anthropic's authoring best practices, with
 packaging and publishing conventions on top. The reference example of a finished skill is
 `claris-filemaker-pro` v2.1.0 (github.com/CadenceUX/claris-filemaker-pro-skill): match its
 frontmatter, structure, evals and packaging.
+
+## Requirements
+
+| Kind | Name | Used for | Surfaces |
+|---|---|---|---|
+| CLI | `python3` (standard library only) | `scripts/validate_skill.py` | Claude Code; elsewhere, give the developer the command |
+| CLI | `git`, `gh` (signed in) | Tags, pushes, GitHub releases, version checks | Claude Code |
+| CLI | `claude` | Installing plugins; `claude -p` for measured trigger tests | Claude Code |
+| Path | `~/.claude/plugins` | Where Anthropic's `skill-creator` plugin and its `run_loop.py` are installed | Claude Code |
+| Path | `~/.config/cadenceux-skill-creator/sensitive-terms.txt` (optional, the developer's own, never in a skill) | Client names, domains and accounts the validator must fail on | Claude Code |
+| Environment variable | `CADENCEUX_SENSITIVE_TERMS` (optional) | Points the validator at a different terms file | Claude Code |
+| API | `api.github.com`, `raw.githubusercontent.com` (public, no key) | Vendor release checks; this skill's version check | Any surface that can fetch |
+
+Plain Claude.ai chat can write and review skills but can't validate, run evals or package:
+say so, and hand over the exact commands.
 
 ## Workflow
 
@@ -88,6 +103,10 @@ gaps:
 6. Does any part need a **guarantee** ("always block X", "never allow Y")? A skill is advice
    and bends under context pressure. Enforcement is a hook packaged in a plugin; route that part
    to `cadenceux-plugin-creator` and say so plainly.
+7. What does it **reach and touch**? Every path, MCP connector, API, environment variable, CLI
+   and account it needs goes in a `## Requirements` section. Any client, server or account it
+   works with stays **out** of the skill: the skill says where to read those values (a local
+   config, an environment variable, memory), never the values.
 
 ## 3. Evals first
 
@@ -131,6 +150,18 @@ Those six keys are the portable set. A skill that ships **only** in a Claude Cod
 also use Claude Code's own fields (`when_to_use`, `disable-model-invocation`, `argument-hint`,
 `context: fork`, `paths`), `$ARGUMENTS` and `${CLAUDE_SKILL_DIR}`. One such key makes it
 Claude Code–only: no `.skill` or zip upload. Fields and rules are in the same reference.
+
+### Sensitive data and requirements
+
+Everything in the folder travels: every upload, every `.skill` file, every commit, the evals
+too. So no secrets, no client names, server URLs, IP addresses or accounts on any server, no
+account or property IDs (the developer's own included), and no `/Users/<name>/` paths, in any
+file. Examples and evals use reserved placeholders (`fms1.client.example`, `192.0.2.10`,
+`name@example.com`). Client names and account names have no shape a scan can spot: keep them
+in the developer's private terms list, which the validator fails on. Everything the skill reaches goes in `## Requirements` (kind, name, what
+for, which surfaces). The validator fails on secrets, warns on the rest, and checks the
+inventory against Requirements. Rules, placeholders and the table format:
+[references/sensitive-data-and-requirements.md](references/sensitive-data-and-requirements.md).
 
 ### Description
 
@@ -212,9 +243,12 @@ python3 scripts/validate_skill.py /path/to/skill-folder
 ```
 
 It checks the frontmatter limits, body length, reference depth and contents lists, VERSION and
-plugin.json agreement, and file count, and prints each failure with the fix. Add
+plugin.json agreement, and file count, and prints each failure with the fix. It also scans
+every file for secrets (fail) and client, account or personal data (warn), and lists every
+path, connector, API, variable and CLI the skill mentions against its `## Requirements`. Add
 `--claude-code` for a Claude Code–only skill. Fix, re-run, and continue only when it reports
-clean. Then work through the judgement items in
+clean; treat every sensitive-data warning as a fix unless the value is a public fact or a
+reviewed fictional test value (then list it in `sensitive-allow.txt`). Then work through the judgement items in
 [references/validation-checklist.md](references/validation-checklist.md).
 
 ## 6–7. Test and iterate
@@ -323,7 +357,11 @@ three models. What changes is whose name is on it.
   reviews their published skills for unreleased changes. This skill builds and tests, then
   hands over; an update's content and evals start here and ship there; a review's content
   questions come back here. Both describe release archives and the `.claude-plugin/`
-  exclusion: when the Claude app's upload rules change, update both.
+  exclusion: when the Claude app's upload rules change, update both. Its client-material
+  scrub and this skill's sensitive-data rules cover the same ground: the maintained home is
+  `references/sensitive-data-and-requirements.md` here, plus the validator's scan; its
+  "Fixing a committed secret" procedure stays there. Changing either triggers a check of the
+  other.
 - **cadenceux-plugin-creator** — owns the plugin container: hooks, install verbs, marketplace
   mechanics. It defers here for any SKILL.md a plugin bundles; this skill routes enforcement
   asks there.

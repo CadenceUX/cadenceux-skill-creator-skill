@@ -1,0 +1,4 @@
+# Reviewed fictional values used as test inputs in evals/evals.json (own-setup-details).
+# They belong to no one; the case checks that they are NOT copied into a skill.
+seo-reader@myproj-123.iam.gserviceaccount.com
+/Users/sam

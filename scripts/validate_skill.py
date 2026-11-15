@@ -10,6 +10,11 @@ Usage:
 --own is for a developer's own skill: it drops the CadenceUX-only checks (CC-BY-4.0 licence,
 cadenceux marketplace wording) and warns if CadenceUX branding has leaked into the skill.
 
+Every mode scans every file for secrets (FAIL) and for client, account or personal data
+(WARN), and lists the paths, MCP connectors, APIs, environment variables and CLIs the skill
+mentions, warning on any missing from its '## Requirements' section. Rules and placeholders:
+references/sensitive-data-and-requirements.md.
+
 --claude-code is for a skill that ships only inside a Claude Code plugin: it also accepts
 Claude Code's own frontmatter keys (when_to_use, disable-model-invocation, argument-hint, …),
 which the Claude.ai upload rejects. --own and --claude-code can be combined.
@@ -19,6 +24,7 @@ Needs only the Python standard library. If PyYAML is installed it is used to par
 frontmatter; otherwise a small built-in parser handles the CadenceUX frontmatter shape.
 """
 import json
+import os
 import re
 import sys
 import zipfile
@@ -98,6 +104,260 @@ def _mini_yaml(raw):
         data[key] = value.strip('"')
         i += 1
     return data
+
+
+# ---------------------------------------------------------------------------
+# Sensitive data (references/sensitive-data-and-requirements.md)
+# ---------------------------------------------------------------------------
+# Secrets never ship, so these FAIL and can't be allowed with "sensitive-ok".
+SECRET_PATTERNS = [
+    ("private key block", re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----")),
+    ("service-account private_key field", re.compile(r'"private_key"\s*:\s*"-----BEGIN')),
+    ("Google API key", re.compile(r"\bAIza[0-9A-Za-z_\-]{35}\b")),
+    ("GitHub token", re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{40,})\b")),
+    ("Anthropic API key", re.compile(r"\bsk-ant-[A-Za-z0-9_\-]{20,}")),
+    ("OpenAI-style secret key", re.compile(r"\bsk-(?:proj-)?[A-Za-z0-9]{32,}\b")),
+    ("Slack token", re.compile(r"\bxox[abprs]-[A-Za-z0-9-]{10,}")),
+    ("AWS access key", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b")),
+    ("password inside a URL", re.compile(r"[a-z][a-z0-9+.-]*://[^/\s:@'\"]+:[^/\s@'\"]+@[^\s'\"]+", re.I)),
+]
+# Files that are secrets or client data by their type.
+SECRET_FILES = re.compile(r"(?:^|/)(?:\.env(?:\..*)?|id_rsa|id_ed25519|.*\.(?:pem|p12|pfx|key|keystore|jks|fmp12))$", re.I)
+# Reserved names (RFC 2606 / 6761 domains, RFC 5737 documentation IPs) are never flagged.
+PLACEHOLDER_HOST = re.compile(r"(?:^|\.)(?:example(?:\.[a-z.]+)?|localhost|[a-z0-9-]+\.(?:example|test|invalid|localhost))$", re.I)
+DOC_IP = re.compile(r"^(?:192\.0\.2|198\.51\.100|203\.0\.113)\.\d{1,3}$|^127\.0\.0\.1$|^0\.0\.0\.0$")
+PRIVATE_IP = re.compile(r"^(?:10\.\d+|172\.(?:1[6-9]|2\d|3[01])|192\.168)\.\d+\.\d+$")
+IPV4 = re.compile(r"(?<![\d.])(\d{1,3}(?:\.\d{1,3}){3})(?![\d.])")
+EMAIL = re.compile(r"\b[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)\b")
+URL = re.compile(r"\b([a-z][a-z0-9+.-]*)://([A-Za-z0-9.-]+)(?::(\d+))?", re.I)
+SERVER_HOST = re.compile(r"\b((?:fms|filemaker|fmserver|fm|server|srv|admin|vpn|db|sql|rdp|intranet|portal|ottofms|otto)\d*"
+                         r"(?:[.-][A-Za-z0-9-]+)*\.[A-Za-z0-9-]+\.[a-z]{2,})\b", re.I)
+LOCAL_SUFFIX = re.compile(r"\b[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.(?:local|lan|internal|corp|intra|localdomain|home\.arpa)\b", re.I)
+ID_PATTERNS = [
+    ("GA4 measurement ID", re.compile(r"\bG-(?!X{6,})[A-Z0-9]{8,12}\b")),
+    ("Universal Analytics ID", re.compile(r"\bUA-\d{4,}-\d+\b")),
+    ("Tag Manager ID", re.compile(r"\bGTM-(?!X{4,})[A-Z0-9]{5,8}\b")),
+    ("GA4 property ID", re.compile(r"\bproperties/(?!123456789\b)\d{6,}\b")),
+]
+PERSONAL_PATH = re.compile(r"(?:/Users/|/home/|[A-Z]:\\Users\\)(?!<|you\b|name\b|username\b|USER\b|\$)([A-Za-z0-9._-]+)")
+FMP12_NAME = re.compile(r"(?<![\w-])([\w-]+\.fmp12)\b", re.I)
+FMP12_PLACEHOLDER = re.compile(r"^(?:example|sample|test|demo|client|your|my|solution|file)[\w-]*\.fmp12$", re.I)
+# The developer's own list of client names, domains and account names: generic patterns can't
+# recognise "Acme" or "fmsadmin". It lives OUTSIDE every skill, one term per line, # comments.
+TERMS_FILE = Path(os.environ.get("CADENCEUX_SENSITIVE_TERMS",
+                                 "~/.config/cadenceux-skill-creator/sensitive-terms.txt")).expanduser()
+ALLOW_MARK = "sensitive-ok"
+TEXT_SUFFIXES = {".md", ".json", ".py", ".txt", ".yaml", ".yml", ".sh", ".js", ".ts", ".html", ".csv", ".xml", ".toml", ".cfg", ".ini", ""}
+
+
+def _host_is_placeholder(host):
+    return bool(PLACEHOLDER_HOST.search(host.lower().rstrip(".")))
+
+
+def load_terms():
+    try:
+        return [ln.strip().lower() for ln in TERMS_FILE.read_text(encoding="utf-8").splitlines()
+                if ln.strip() and not ln.strip().startswith("#")]
+    except OSError:
+        return []
+
+
+TERMS = load_terms()
+
+
+def scan_text(rel, text, fails, warns):
+    """Collect secret FAILs and identifier WARNs for one file's text."""
+    if re.search(r"FMSaveAsXML|<FMPReport\b|<FMDynamicTemplate\b", text[:5000]):
+        warns.append(f"{rel}: looks like a FileMaker Save-as-XML or DDR export (client schema and data)")
+    for n, line in enumerate(text.splitlines(), 1):
+        where = f"{rel}:{n}"
+        for label, pat in SECRET_PATTERNS:
+            for m in pat.finditer(line):
+                if label == "password inside a URL" and _host_is_placeholder(m.group(0).split("@", 1)[1].split("/")[0].split(":")[0]):
+                    continue
+                fails.append(f"{where}: {label}")
+        low = line.lower()
+        for term in TERMS:
+            if term in low:
+                fails.append(f"{where}: term from your sensitive-terms list")
+        if ALLOW_MARK in line:
+            continue
+        for m in EMAIL.finditer(line):
+            dom = m.group(1).lower()
+            if _host_is_placeholder(dom):
+                continue
+            kind = "service-account email" if dom.endswith("gserviceaccount.com") else "email address"
+            warns.append(f"{where}: {kind} {m.group(0)}")
+        for m in URL.finditer(line):
+            scheme, host, port = m.group(1).lower(), m.group(2).lower(), m.group(3)
+            if _host_is_placeholder(host):
+                continue
+            if IPV4.fullmatch(host) and not DOC_IP.match(host):
+                warns.append(f"{where}: IP address in a URL ({host})")
+            elif scheme in ("fmnet", "fmp", "fmp12", "rdp", "ssh", "sftp", "smb", "afp"):
+                warns.append(f"{where}: server address {scheme}://{host}")
+            elif port and port not in ("80", "443"):
+                warns.append(f"{where}: host with explicit port {host}:{port}")
+        for m in IPV4.finditer(line):
+            ip = m.group(1)
+            if PRIVATE_IP.match(ip) and not DOC_IP.match(ip):
+                warns.append(f"{where}: private IP address {ip}")
+        for m in SERVER_HOST.finditer(line):
+            if not _host_is_placeholder(m.group(1)):
+                warns.append(f"{where}: server-style hostname {m.group(1)}")
+        for m in LOCAL_SUFFIX.finditer(line):
+            if not _host_is_placeholder(m.group(0)):
+                warns.append(f"{where}: internal hostname {m.group(0)}")
+        for label, pat in ID_PATTERNS:
+            for m in pat.finditer(line):
+                warns.append(f"{where}: {label} {m.group(0)}")
+        for m in FMP12_NAME.finditer(line):
+            if FMP12_PLACEHOLDER.match(m.group(1)):
+                continue
+            warns.append(f"{where}: FileMaker file name {m.group(1).strip()}")
+        for m in PERSONAL_PATH.finditer(line):
+            warns.append(f"{where}: personal home path ({m.group(0)}…): use ~/ or ${{CLAUDE_SKILL_DIR}}")
+
+
+ALLOW_FILE = "sensitive-allow.txt"
+
+
+def read_allow(text):
+    """Reviewed, deliberately fictional values (one per line, # comments) that warnings may skip."""
+    return [ln.strip() for ln in (text or "").splitlines() if ln.strip() and not ln.strip().startswith("#")]
+
+
+def report_sensitive(fails, warns, allowed=()):
+    """Print the scan results: secrets fail, identifiers warn (one line per finding, capped)."""
+    if allowed:
+        kept = [w for w in warns if not any(a in w for a in allowed)]
+        if len(kept) != len(warns):
+            report("PASS", f"{len(warns) - len(kept)} reviewed value(s) skipped via {ALLOW_FILE}")
+        warns = kept
+    if fails:
+        report("FAIL", f"secrets or listed client terms found ({len(fails)}): remove them; rotate any secret "
+                       "that was ever committed or shared (references/sensitive-data-and-requirements.md)")
+        for f in fails[:15]:
+            print(f"        {f}")
+    else:
+        report("PASS", "no secrets found" + (f" ({len(TERMS)} terms from your sensitive-terms list checked)"
+                                             if TERMS else f"; no sensitive-terms list at {TERMS_FILE}"))
+    if warns:
+        report("WARN", f"possible client, account or personal data ({len(warns)}): replace with placeholders or move "
+                       f"out of the skill; add '{ALLOW_MARK}' only after review")
+        for w in warns[:25]:
+            print(f"        {w}")
+        if len(warns) > 25:
+            print(f"        … and {len(warns) - 25} more")
+    else:
+        report("PASS", "no client, account or personal data found")
+
+
+def scan_folder(root):
+    fails, warns = [], []
+    for f in sorted(root.rglob("*")):
+        if not f.is_file() or ".git" in f.parts or f.name == ".DS_Store":
+            continue
+        rel = f.relative_to(root).as_posix()
+        if rel.startswith("dist/"):
+            continue  # release archives are checked with --archive
+        if SECRET_FILES.search(rel):
+            fails.append(f"{rel}: file type that holds secrets or client data")
+            continue
+        if (f.name in ("validate_skill.py", ALLOW_FILE) or f.suffix.lower() not in TEXT_SUFFIXES
+                or f.stat().st_size > 5_000_000):
+            continue
+        text = f.read_text(encoding="utf-8", errors="replace")
+        if '"type": "service_account"' in text and '"private_key"' in text:
+            fails.append(f"{rel}: Google service-account key file")
+            continue
+        scan_text(rel, text, fails, warns)
+    allow = root / ALLOW_FILE
+    report_sensitive(fails, warns, read_allow(allow.read_text(encoding="utf-8")) if allow.is_file() else ())
+
+
+# ---------------------------------------------------------------------------
+# Requirements inventory: what the skill reaches outside its own folder
+# ---------------------------------------------------------------------------
+BUILTIN_VARS = {"CLAUDE_SKILL_DIR", "CLAUDE_PROJECT_DIR", "CLAUDE_PLUGIN_ROOT", "CLAUDE_PLUGIN_DATA",
+                "CLAUDE_SESSION_ID", "CLAUDE_EFFORT", "ARGUMENTS", "HOME", "PATH", "USER", "PWD", "TMPDIR"}
+POSIX_TOOLS = {"cd", "ls", "cat", "echo", "printf", "cp", "mv", "rm", "mkdir", "rmdir", "chmod", "chown", "find",
+               "grep", "sed", "awk", "head", "tail", "wc", "sort", "uniq", "cut", "tr", "diff", "export", "set",
+               "unset", "source", ".", "test", "[", "true", "false", "for", "do", "done", "if", "then", "fi",
+               "while", "touch", "ln", "pwd", "xargs", "tee", "sleep", "env", "which", "command", "open", "read"}
+MCP_DOUBLE = re.compile(r"\bmcp__([A-Za-z0-9-]+)__[A-Za-z0-9_]+")
+MCP_QUALIFIED = re.compile(r"`([A-Z][A-Za-z0-9-]*(?:[ ._][A-Za-z0-9-]+)*):([A-Za-z][A-Za-z0-9_]+)`")
+API_HOST = re.compile(r"https?://((?:[a-z0-9-]+\.)*(?:googleapis\.com|api\.[a-z0-9.-]+|[a-z0-9-]+-api\.[a-z0-9.-]+))", re.I)
+ENV_VAR = re.compile(r"\$\{?([A-Z][A-Z0-9_]{2,})\}?|\b([A-Z][A-Z0-9]*_[A-Z0-9_]+)=")
+HOME_PATH = re.compile(r"(?<![\w/])~/([A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?)")
+FENCE = re.compile(r"```(?:bash|sh|shell|zsh|console)\n(.*?)```", re.S)
+
+
+def collect_requirements(texts):
+    """Return {kind: {item: first file}} for every external thing the markdown mentions."""
+    found = {"Connector (MCP)": {}, "API": {}, "Environment variable": {}, "Path": {}, "CLI": {}}
+    for rel, text in texts:
+        for m in MCP_DOUBLE.finditer(text):
+            found["Connector (MCP)"].setdefault(m.group(1), rel)
+        for m in MCP_QUALIFIED.finditer(text):
+            if m.group(1) not in ("ServerName", "Server", "Name"):  # the naming convention itself
+                found["Connector (MCP)"].setdefault(m.group(1), rel)
+        for m in API_HOST.finditer(text):
+            if not _host_is_placeholder(m.group(1)):
+                found["API"].setdefault(m.group(1).lower(), rel)
+        for m in ENV_VAR.finditer(text):
+            name = m.group(1) or m.group(2)
+            if name not in BUILTIN_VARS and not name.startswith("CLAUDE_"):
+                found["Environment variable"].setdefault(name, rel)
+        for m in HOME_PATH.finditer(text):
+            if "example" not in m.group(1) and not text[m.end():m.end() + 1] == "<":
+                found["Path"].setdefault("~/" + m.group(1), rel)
+        for block in FENCE.findall(text):
+            for line in block.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                first = re.split(r"\s+", line.lstrip("$ ").split("|")[0].split("&&")[0].strip())[0]
+                if re.fullmatch(r"[a-z][a-z0-9._-]*", first) and first not in POSIX_TOOLS and "=" not in first:
+                    found["CLI"].setdefault(first, rel)
+    return found
+
+
+def requirements_section(skill_text):
+    m = re.search(r"^##\s+Requirements\b.*?(?=^##\s|\Z)", skill_text, re.M | re.S)
+    return m.group(0) if m else None
+
+
+def check_requirements(root, skill_text):
+    texts = [("SKILL.md", skill_text)]
+    refs = root / "references"
+    if refs.is_dir():
+        texts += [(p.relative_to(root).as_posix(), p.read_text(encoding="utf-8", errors="replace"))
+                  for p in sorted(refs.rglob("*.md"))]
+    found = collect_requirements(texts)
+    total = sum(len(v) for v in found.values())
+    if not total:
+        report("PASS", "requirements: the skill mentions no paths, connectors, APIs, environment variables or CLIs")
+        return
+    section = requirements_section(skill_text)
+    listing = "; ".join(f"{k}: {', '.join(sorted(v)[:6])}" for k, v in found.items() if v)
+    if section is None:
+        report("WARN", f"no '## Requirements' section, but the skill reaches {total} outside things: {listing}")
+        return
+    low = section.lower()
+    missing = []
+    for kind, items in found.items():
+        for item in sorted(items):
+            key = item.lower()
+            probe = key.split("/")[1] if kind == "Path" and "/" in key else key
+            if key not in low and probe not in low:
+                missing.append(f"{kind} {item} ({items[item]})")
+    if missing:
+        report("WARN", f"## Requirements is missing {len(missing)} item(s) the skill mentions:")
+        for m in missing[:20]:
+            print(f"        {m}")
+    else:
+        report("PASS", f"## Requirements covers all {total} paths, connectors, APIs, variables and CLIs mentioned")
 
 
 def main(folder, own=False, claude_code=False):
@@ -274,6 +534,8 @@ def main(folder, own=False, claude_code=False):
             report("WARN", f"name '{fm.get('name')}' uses a CadenceUX prefix; use the developer's own (or none)")
         if not leaks and not str(fm.get("name", "")).startswith(("cadenceux-", "claris-")):
             report("PASS", "no CadenceUX branding")
+    scan_folder(root)
+    check_requirements(root, skill_text)
     ev = root / "evals" / "evals.json"
     if ev.is_file():
         try:
@@ -357,6 +619,24 @@ def check_archive(path):
 
     level = "FAIL" if len(names) >= FILE_COUNT_SOFT_MAX else ("WARN" if len(names) >= FILE_COUNT_WARN else "PASS")
     report(level, f"{len(names)} files (uploads reported to fail above ~{FILE_COUNT_SOFT_MAX})")
+
+    # The archive is what actually travels, so scan every file in it.
+    fails, warns = [], []
+    for n in names:
+        rel = n.split("/", 1)[1]
+        if SECRET_FILES.search(rel):
+            fails.append(f"{rel}: file type that holds secrets or client data")
+            continue
+        if rel.endswith("validate_skill.py") or rel == ALLOW_FILE or Path(rel).suffix.lower() not in TEXT_SUFFIXES:
+            continue
+        text = z.read(n).decode("utf-8", "replace")
+        if '"type": "service_account"' in text and '"private_key"' in text:
+            fails.append(f"{rel}: Google service-account key file")
+            continue
+        scan_text(rel, text, fails, warns)
+    allow_name = f"{top}/{ALLOW_FILE}"
+    report_sensitive(fails, warns, read_allow(z.read(allow_name).decode("utf-8", "replace"))
+                     if allow_name in z.namelist() else ())
 
     twin = arc.with_suffix(".skill" if arc.suffix == ".zip" else ".zip")
     if twin.is_file():

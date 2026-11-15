@@ -1,5 +1,51 @@
 # CHANGELOG — cadenceux-skill-creator
 
+## [2.4.0] — 2026-11-15
+
+Sensitive data and requirements. Neither this skill nor Anthropic's `skill-creator` checked a
+skill for secrets, client details or accounts, or listed what a skill reaches outside its
+folder. Both are now part of the workflow and the validator.
+
+### Added
+
+- **`references/sensitive-data-and-requirements.md`**: what never goes in any file of a skill
+  (secrets; client names, server URLs, IP addresses, accounts and file names; account and
+  property IDs, the developer's own included; personal paths), where the real values go
+  instead, reserved placeholders for examples and evals, the `## Requirements` table, and what
+  the validator checks.
+- **Sensitive-data scan in `validate_skill.py`**, every mode and `--archive`, every file,
+  evals and results included. Fails on private keys, service-account key files, Google,
+  GitHub, Anthropic, OpenAI, Slack and AWS key formats, passwords in URLs, and `.env`, `.pem`,
+  `.p12`, `.key` and `.fmp12` files. Warns on email addresses, service-account emails, private
+  and URL IP addresses, server-style and internal hostnames, analytics and tag IDs, named
+  `.fmp12` files, personal home paths and Save-as-XML exports. Reserved placeholders are never
+  flagged.
+- **The developer's private client list**: `~/.config/cadenceux-skill-creator/sensitive-terms.txt`
+  (or `CADENCEUX_SENSITIVE_TERMS`). Client and account names have no shape a pattern can spot,
+  so the validator fails on any listed term.
+- **Requirements inventory**: the validator lists every path, MCP connector, API host,
+  environment variable and CLI a skill mentions and warns on each missing from its
+  `## Requirements` section.
+- **`sensitive-allow.txt`** for reviewed fictional or public values where a `sensitive-ok`
+  comment can't go (JSON evals). Neither silences a failure.
+- **Step 2 asks what the skill reaches and touches**; step 4 carries the sensitive-data rule;
+  the checklist has three new items; this skill now has its own `## Requirements`.
+- **`cadenceux-github`** declared as sharing these rules, with this reference as their home.
+
+### Fixed in this skill
+
+- The packaging reference named the maintainer's own release folder; it now says to ask.
+- An eval used a real-looking domain for a fictional developer; it now uses
+  `samlee.example`.
+
+### Checked
+
+- Three new eval cases (`client-data-in-skill`, `requirements-inventory`,
+  `own-setup-details`), run against released 2.3.0 and on Haiku, Sonnet and Opus: results in
+  `evals/results-2026-11-15-v2.4.0.md`. Validator self-tests on seeded fixtures in the same
+  file. Every past version in this repository's git history scanned: no secrets, client or
+  account data.
+
 ## [2.3.0] — 2026-11-15
 
 Testing brought into line with Anthropic's `skill-creator`, after a side-by-side review of its

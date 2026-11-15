@@ -24,6 +24,10 @@ Built and maintained by [Darrin Southern](https://www.linkedin.com/in/darrin-sou
 - **Measured trigger testing.** Tunes the description with Anthropic's `skill-creator`
   `run_loop.py`, which runs should-trigger and near-miss queries through Claude Code and keeps
   the best description on a held-back set.
+- **Sensitive data and requirements.** The validator fails on secrets anywhere in a skill and
+  warns on client names, server URLs, IP addresses, accounts, IDs and personal paths. It
+  also lists every path, MCP connector, API, environment variable and CLI a skill mentions and
+  checks each against the skill's `## Requirements` section.
 - **Claude Code–only skills.** Covers Claude Code's extra frontmatter (`disable-model-invocation`,
   `argument-hint`, `when_to_use` and more) and validates it with `--claude-code`.
 - **Staleness checks** for skills that catalog a vendor's plugin, API or product, and rules for
@@ -66,6 +70,7 @@ double-click it.
 | `references/testing-and-evals.md` | Evaluation-driven development, evals.json, model runs |
 | `references/packaging-and-release.md` | GitHub, plugin.json, marketplace, archives, retiring |
 | `references/execution-surfaces.md` | What scripts can do in chat, Code and the API |
+| `references/sensitive-data-and-requirements.md` | What never goes in a skill, placeholders, the Requirements table |
 | `references/validation-checklist.md` | The full checklist (mechanical and judgement items) |
 | `references/verification-patterns.md` | Staleness checks and catalog accuracy |
 | `scripts/validate_skill.py` | Standard-library validator |

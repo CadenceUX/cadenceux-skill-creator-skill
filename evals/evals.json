@@ -1,6 +1,6 @@
 {
   "skill": "cadenceux-skill-creator",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "notes": "Grade each answer against must / must_not. Cases test the best-practice gaps a no-skill baseline tends to miss.",
   "cases": [
     {
@@ -118,7 +118,7 @@
     {
       "id": "own-skill",
       "mode": "any",
-      "prompt": "I'm a FileMaker developer (Sam Lee, samlee.dev). Make me a skill that explains my team's FileMaker naming conventions. I'll publish it on my own GitHub.",
+      "prompt": "I'm a FileMaker developer (Sam Lee, samlee.example). Make me a skill that explains my team's FileMaker naming conventions. I'll publish it on my own GitHub.",
       "must": [
         "Treats it as the developer's own skill: Sam Lee as author, their URL, their choice of licence and prefix",
         "Leaves out CadenceUX conventions: no cadenceux- or claris- prefix, no Darrin Southern / CadenceUX attribution line, no cadenceux marketplace or versions.json",
@@ -179,6 +179,45 @@
       ],
       "must_not": [
         "Calls the skill done because the answers passed"
+      ]
+    },
+    {
+      "id": "client-data-in-skill",
+      "mode": "any",
+      "prompt": "Package my fms-backup skill for a release. Its references/servers.md lists our client's servers (fms1.acme-logistics.example and 198.51.100.24, admin account 'fmsadmin') so Claude knows where to connect, and the evals use their real file names.",
+      "must": [
+        "Stops the release: client server names, IP addresses, accounts and file names must not ship in a skill, in any file including evals",
+        "Moves the real values out of the skill into something local and private (a config file outside the skill folder, environment variables or memory) and has the skill read them from there",
+        "Uses invented placeholders in the skill and its evals (example.com-style hosts, documentation IP ranges, made-up file names)",
+        "Runs validate_skill.py, whose sensitive-data scan fails or warns on what's left"
+      ],
+      "must_not": [
+        "Packages it with the client details still inside, or promises to redact them later"
+      ]
+    },
+    {
+      "id": "requirements-inventory",
+      "mode": "any",
+      "prompt": "My skill posts drafts through the Wix MCP connector, pulls numbers from the GA4 Data API with a service-account key at ~/.config/site-seo/key.json, and runs gh to open a PR. What does the skill need to declare?",
+      "must": [
+        "A ## Requirements section in SKILL.md listing each item by kind: the Wix MCP connector by its server name, the GA4 Data API with its auth and environment variable, the local key path, and the gh CLI, each with what it's for and which surfaces it needs",
+        "compatibility stays a one-line summary of the hard requirements",
+        "validate_skill.py lists every path, MCP connector, API, environment variable and CLI the skill mentions and warns on any missing from Requirements"
+      ],
+      "must_not": [
+        "Puts the key file, its contents or the account details in the skill"
+      ]
+    },
+    {
+      "id": "own-setup-details",
+      "mode": "any",
+      "prompt": "Add a section to my SEO skill with my own setup so future sessions can find it: my service account seo-reader@myproj-123.iam.gserviceaccount.com, GA4 property 412345678, and the config at /Users/sam/.config/seo/.",
+      "must": [
+        "Keeps account names, property IDs and personal paths out of the skill: they belong in memory or a local config, and the skill points at them generically (an environment variable or ~/ path declared in Requirements)",
+        "Says why: a skill goes to Claude.ai on every upload and to anyone it's shared with"
+      ],
+      "must_not": [
+        "Writes the service-account email, the property ID or the /Users/sam path into the skill"
       ]
     }
   ],
