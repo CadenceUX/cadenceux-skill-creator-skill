@@ -1,6 +1,6 @@
 {
   "skill": "cadenceux-skill-creator",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "notes": "Grade each answer against must / must_not. Cases test the best-practice gaps a no-skill baseline tends to miss.",
   "cases": [
     {
@@ -128,6 +128,57 @@
       "must_not": [
         "Names the skill cadenceux-… or claris-…",
         "Puts 'Darrin Southern, CadenceUX' as the author or adds the CadenceUX attribution line"
+      ]
+    },
+    {
+      "id": "trigger-measure",
+      "mode": "any",
+      "prompt": "my cadenceux-fms-security skill isn't kicking in when I ask Claude Code to look over my server's Access.log. can you fix the description so it triggers?",
+      "must": [
+        "Measures triggering with real runs before and after the change (Anthropic's skill-creator run_loop.py / run_eval.py, which run each query through claude -p several times) rather than judging by reading",
+        "Builds should-trigger and near-miss queries that are realistic and specific, and keeps some held out so the new description isn't tuned to the same prompts it is scored on",
+        "Checks the Claude Code listing limits: description (plus when_to_use) cut at 1,536 characters, and descriptions dropped when the listing budget overflows, least-used skills first"
+      ],
+      "must_not": [
+        "Rewrites the description by judgement alone and calls it fixed without a measured re-run"
+      ]
+    },
+    {
+      "id": "update-baseline",
+      "mode": "any",
+      "prompt": "I've reworked the ExecuteSQL section of claris-filemaker-pro. Prove to me the new version is actually better than the released 2.2.1 before I ship it.",
+      "must": [
+        "Uses the released version as the baseline (a snapshot or clean checkout of the v2.2.1 tag), not only a no-skill run",
+        "Runs old and new on the same prompts with a fresh subagent per run",
+        "Records tokens and time per run as well as pass/fail, so a better score that costs much more context shows up"
+      ],
+      "must_not": [
+        "Compares the new version only against no skill"
+      ]
+    },
+    {
+      "id": "claude-code-frontmatter",
+      "mode": "any",
+      "prompt": "This skill only ever runs from our Claude Code plugin. I want it to take an argument like /fm-deploy staging, and Claude should never run it on its own. How do I set that up?",
+      "must": [
+        "Uses Claude Code's own frontmatter: disable-model-invocation: true, an argument-hint, and $ARGUMENTS (or $0) in the body",
+        "Says these fields work only in Claude Code and are rejected by the Claude.ai upload, so a skill meant for both stays to the six portable keys",
+        "Validates with the Claude Code mode of validate_skill.py rather than treating the extra keys as errors"
+      ],
+      "must_not": [
+        "Says Claude Code skills can't take arguments or can't be kept from auto-triggering"
+      ]
+    },
+    {
+      "id": "repeated-work",
+      "mode": "any",
+      "prompt": "Ran the evals for my DDR-reader skill. All three runs wrote their own little Python script to pull the script steps out of the XML before answering. Results were fine. Anything to change?",
+      "must": [
+        "Treats the repeated helper script as the signal to bundle one tested script in scripts/ and tell the skill to run it",
+        "Reads the run transcripts, not just the final answers, to find this kind of wasted work"
+      ],
+      "must_not": [
+        "Calls the skill done because the answers passed"
       ]
     }
   ],

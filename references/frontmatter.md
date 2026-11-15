@@ -4,6 +4,7 @@
 - Hard limits
 - The CadenceUX standard and why
 - How Claude.ai renders the card
+- Claude Code–only skills
 - Versions
 - File count
 
@@ -54,6 +55,43 @@ metadata:
 - Metadata values are plain text; markdown links show as raw characters.
 - The card is built from frontmatter. Never hand-write a "Version" or "Compatibility" block in
   the body; it duplicates the card and drifts.
+
+## Claude Code–only skills
+
+The six keys above are the portable set: the Claude.ai upload, the Skills API and Anthropic's
+packager accept nothing else. Claude Code reads more, and ignores keys it doesn't know. A skill
+that ships only inside a Claude Code plugin, and is never uploaded as a `.skill` or zip, may use
+them. The ones that matter most:
+
+| Field | What it does |
+|---|---|
+| `when_to_use` | Extra trigger text, added to the description in the skill listing |
+| `disable-model-invocation: true` | Only the user can start it (as a `/` command); Claude never loads it on its own |
+| `user-invocable: false` | The reverse: Claude can load it, but it's hidden from the `/` menu |
+| `argument-hint` | Shown in autocomplete, e.g. `"[environment]"` |
+| `disallowed-tools` | Tools blocked while the skill runs (`allowed-tools` is portable) |
+| `context: fork` (+ `agent`) | Runs the skill in a forked subagent instead of the main conversation |
+| `paths` | Glob patterns that limit when the skill is offered |
+| `model`, `effort` | Model and effort while the skill runs |
+
+The body can also use `$ARGUMENTS` (or `$0`, `$1`, … for single arguments) to receive what the
+user typed after the command, and `${CLAUDE_SKILL_DIR}` to reach the skill's own files from any
+working directory. A line starting `` !`command` `` runs that command when the skill loads and
+puts its output in place.
+
+Rules for using them:
+
+- **Decide the surface first.** One extra key makes the skill Claude Code–only: say so in
+  `compatibility`, and ship it through the plugin marketplace only, never as a release
+  `.skill` or zip.
+- **Validate with `--claude-code`**: `scripts/validate_skill.py --claude-code <folder>` accepts
+  these keys and still fails unknown ones (usually typos).
+- **A plugin skill is namespaced**: `/plugin-name:skill-name`, not `/skill-name`.
+- **`disable-model-invocation` is a setting, not a promise in prose**, so it's the right tool
+  for "Claude must never run this by itself". Anything stronger (block a tool call, check an
+  edit) is a hook: route it to `cadenceux-plugin-creator`.
+- Claude Code cuts the description plus `when_to_use` at 1,536 characters in the listing. Keep
+  the description itself under 1,024 regardless, so the limit is the same everywhere.
 
 ## Versions
 

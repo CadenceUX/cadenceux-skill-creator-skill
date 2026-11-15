@@ -19,8 +19,13 @@ Built and maintained by [Darrin Southern](https://www.linkedin.com/in/darrin-sou
   words, description length, XML tags, allowed keys), body length, reference depth and contents
   lists, version agreement across `VERSION`, frontmatter and `plugin.json`, eval count and file
   count, and prints the fix for each failure.
-- **Testing across models.** Runs each case on Haiku, Sonnet and Opus against the baseline, and
-  tunes the description against should-trigger and near-miss prompts.
+- **Testing across models.** Runs each case on Haiku, Sonnet and Opus against the baseline (no
+  skill for a new skill, the released version for an update), with tokens and time per run.
+- **Measured trigger testing.** Tunes the description with Anthropic's `skill-creator`
+  `run_loop.py`, which runs should-trigger and near-miss queries through Claude Code and keeps
+  the best description on a held-back set.
+- **Claude Code–only skills.** Covers Claude Code's extra frontmatter (`disable-model-invocation`,
+  `argument-hint`, `when_to_use` and more) and validates it with `--claude-code`.
 - **Staleness checks** for skills that catalog a vendor's plugin, API or product, and rules for
   keeping "all N" counts honest.
 - **Publishing.** GitHub repo and tagged release, `.claude-plugin/plugin.json`, the `cadenceux`

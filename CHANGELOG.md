@@ -1,5 +1,46 @@
 # CHANGELOG — cadenceux-skill-creator
 
+## [2.3.0] — 2026-11-15
+
+Testing brought into line with Anthropic's `skill-creator`, after a side-by-side review of its
+current version and Anthropic's authoring docs. The writing rules already matched; the test
+loop didn't.
+
+### Added
+
+- **Measured trigger testing.** Description tuning now runs Anthropic's `run_loop.py` (each
+  query through `claude -p` three times, 40% held back, best description chosen on the
+  held-back score) instead of judging by reading. The old reference wrongly said
+  `improve_description.py` ran the loop. Claude.ai chat still judges by reading, and says the
+  result is unmeasured.
+- **Claude Code listing limits** as the first check for a skill that isn't triggering:
+  descriptions cut at 1,536 characters, and dropped for the least-used skills when the listing
+  overflows.
+- **The released version as the baseline for updates**, snapshotted from its tag. A new skill
+  still compares against no skill.
+- **Cost per run.** Tokens and time from each subagent's completion notice go in the results
+  table beside pass/fail.
+- **Grading and transcript rules.** Script what a script can check, flag cases the baseline
+  also passes, and read run transcripts for repeated work to bundle as a script.
+- **Claude Code–only skills.** `references/frontmatter.md` covers Claude Code's own frontmatter
+  (`when_to_use`, `disable-model-invocation`, `argument-hint`, `context: fork`, `paths` and
+  others), `$ARGUMENTS`, `${CLAUDE_SKILL_DIR}`, and the rule that one such key means plugin
+  marketplace only.
+- **`validate_skill.py --claude-code`** accepts those keys, warns that the skill is now
+  plugin-only, and still fails unknown keys. Every mode warns when description plus
+  `when_to_use` passes 1,536 characters, and `--archive` fails an archive whose SKILL.md uses
+  Claude Code–only keys.
+- **"Explain the why"** in the writing rules.
+- **Anthropic's `skill-creator`** in "Relationship to other skills": this skill uses its
+  scripts where they're installed and keeps no copy.
+
+### Checked
+
+- Four new eval cases (`trigger-measure`, `update-baseline`, `claude-code-frontmatter`,
+  `repeated-work`), run against released 2.2.0 as the baseline and on Haiku, Sonnet and Opus:
+  results in `evals/results-2026-11-15-v2.3.0.md`. Validator self-tests for the new mode in the
+  same file.
+
 ## [2.2.0] — 2026-10-19
 
 A developer's own skills, and a hand-off to `cadenceux-github` for publishing them.

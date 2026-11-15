@@ -4,10 +4,15 @@
 Usage:
     python3 scripts/validate_skill.py /path/to/skill-folder
     python3 scripts/validate_skill.py --own /path/to/skill-folder
+    python3 scripts/validate_skill.py --claude-code /path/to/skill-folder
     python3 scripts/validate_skill.py --archive /path/to/skill-name-vX.Y.Z.zip
 
 --own is for a developer's own skill: it drops the CadenceUX-only checks (CC-BY-4.0 licence,
 cadenceux marketplace wording) and warns if CadenceUX branding has leaked into the skill.
+
+--claude-code is for a skill that ships only inside a Claude Code plugin: it also accepts
+Claude Code's own frontmatter keys (when_to_use, disable-model-invocation, argument-hint, …),
+which the Claude.ai upload rejects. --own and --claude-code can be combined.
 
 Prints one line per check (PASS, WARN or FAIL, with the fix) and exits 1 if anything failed.
 Needs only the Python standard library. If PyYAML is installed it is used to parse the
@@ -28,6 +33,11 @@ TOC_THRESHOLD = 100           # reference files longer than this need a contents
 FILE_COUNT_SOFT_MAX = 200     # community-reported upload failure point
 FILE_COUNT_WARN = 180         # warn with headroom before the soft max
 ALLOWED_KEYS = {"name", "description", "license", "allowed-tools", "compatibility", "metadata"}
+# Read by Claude Code only (code.claude.com/docs/en/skills); the Claude.ai upload rejects them.
+CLAUDE_CODE_KEYS = {"when_to_use", "argument-hint", "arguments", "disable-model-invocation",
+                    "user-invocable", "disallowed-tools", "model", "effort", "context", "agent",
+                    "background", "hooks", "paths", "shell"}
+LISTING_MAX = 1536            # Claude Code cuts description + when_to_use here in the skill listing
 RESERVED = ("anthropic", "claude")
 XML_TAG = re.compile(r"<\s*/?\s*[A-Za-z][^>]*>")
 
@@ -90,7 +100,7 @@ def _mini_yaml(raw):
     return data
 
 
-def main(folder, own=False):
+def main(folder, own=False, claude_code=False):
     root = Path(folder).resolve()
     skill_md = root / "SKILL.md"
     if not skill_md.is_file():
@@ -107,9 +117,21 @@ def main(folder, own=False):
         report("FAIL", str(e))
         return 1
 
-    extra = set(fm) - ALLOWED_KEYS
-    report("FAIL" if extra else "PASS",
-           f"Frontmatter keys{' - remove: ' + ', '.join(sorted(extra)) if extra else ''}")
+    cc_keys = set(fm) & CLAUDE_CODE_KEYS
+    extra = set(fm) - ALLOWED_KEYS - (CLAUDE_CODE_KEYS if claude_code else set())
+    if extra:
+        hint = ""
+        if extra & CLAUDE_CODE_KEYS:
+            hint = (" (Claude Code-only keys: if the skill ships only in a Claude Code plugin, "
+                    "re-run with --claude-code; otherwise remove them)")
+        report("FAIL", f"Frontmatter keys - remove: {', '.join(sorted(extra))}{hint}")
+    else:
+        report("PASS", "Frontmatter keys")
+    if claude_code and cc_keys:
+        report("WARN", f"Claude Code-only keys ({', '.join(sorted(cc_keys))}): ship through the plugin "
+                       "marketplace only, never as a .skill or zip upload; say so in compatibility")
+    if claude_code and not cc_keys:
+        report("WARN", "--claude-code but no Claude Code-only keys: the plain mode is enough")
 
     name = str(fm.get("name", ""))
     problems = []
@@ -140,6 +162,10 @@ def main(folder, own=False):
            f"description ({len(desc)} chars)" + (": " + "; ".join(dprob) if dprob else ""))
     if not re.search(r"\b(Use when|Use whenever|Use for|Use it when)\b", desc):
         report("WARN", "description has no 'Use when…' clause saying when to trigger")
+    listing = len(desc) + len(str(fm.get("when_to_use", "") or ""))
+    if listing > LISTING_MAX:
+        report("WARN", f"description + when_to_use is {listing} chars; Claude Code's skill listing "
+                       f"cuts it at {LISTING_MAX}")
 
     comp = str(fm.get("compatibility", "") or "")
     if comp and len(comp) > COMPATIBILITY_MAX:
@@ -313,6 +339,10 @@ def check_archive(path):
             version = str((fm.get("metadata") or {}).get("version", "")).strip() or None
             if fm.get("name") and fm.get("name") != top:
                 report("WARN", f"folder '{top}' differs from name '{fm.get('name')}'")
+            cc = set(fm) & CLAUDE_CODE_KEYS
+            if cc:
+                report("FAIL", f"SKILL.md uses Claude Code-only keys ({', '.join(sorted(cc))}): the Claude app's "
+                               "upload rejects them; ship this skill through the plugin marketplace only")
         except (ValueError, UnicodeDecodeError) as e:
             report("FAIL", f"SKILL.md frontmatter unreadable: {e}")
     if version and "VERSION" in inside:
@@ -344,11 +374,12 @@ def finish():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3 and sys.argv[1] == "--archive":
-        sys.exit(check_archive(sys.argv[2]))
-    if len(sys.argv) == 3 and sys.argv[1] == "--own":
-        sys.exit(main(sys.argv[2], own=True))
-    if len(sys.argv) != 2 or sys.argv[1].startswith("-"):
+    flags = [a for a in sys.argv[1:] if a.startswith("--")]
+    paths = [a for a in sys.argv[1:] if not a.startswith("--")]
+    known = {"--archive", "--own", "--claude-code"}
+    if len(paths) != 1 or set(flags) - known or ("--archive" in flags and len(flags) > 1):
         print(__doc__)
         sys.exit(2)
-    sys.exit(main(sys.argv[1]))
+    if "--archive" in flags:
+        sys.exit(check_archive(paths[0]))
+    sys.exit(main(paths[0], own="--own" in flags, claude_code="--claude-code" in flags))

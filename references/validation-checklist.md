@@ -53,9 +53,14 @@ through the judgement items.
 
 ## Testing
 - [ ] At least three eval cases plus near-misses in `evals/evals.json`
-- [ ] Baseline recorded; the skill beats it
-- [ ] Run on Haiku, Sonnet and Opus; results file saved
-- [ ] Description tuned against should-trigger and near-miss prompts
+- [ ] Baseline recorded (no skill for a new skill, the released version for an update); the
+      skill beats it
+- [ ] Run on Haiku, Sonnet and Opus; tokens and time recorded; results file saved
+- [ ] No case passes on the baseline every time; transcripts read for repeated work
+- [ ] Description tuned against should-trigger and near-miss prompts, measured with
+      `run_loop.py` in Claude Code (or marked unmeasured)
+- [ ] Claude Code–only frontmatter keys only in a plugin-only skill, validated with
+      `--claude-code`
 
 ## Publishing
 - [ ] (auto) `VERSION`, `metadata.version`, `plugin.json` version identical

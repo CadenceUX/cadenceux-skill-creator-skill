@@ -16,7 +16,7 @@ compatibility: >-
   Cowork.
 metadata:
   author: Darrin Southern, CadenceUX
-  version: "2.2.0"
+  version: "2.3.0"
 ---
 
 # CadenceUX Skill Creator
@@ -34,7 +34,7 @@ Copy this checklist into the response and tick it off. Jump in at the step the w
 Skill progress:
 - [ ] 1. Environment check (model and surface)
 - [ ] 2. Capture intent
-- [ ] 3. Write 3+ evals; run a no-skill baseline
+- [ ] 3. Write 3+ evals; run the baseline (no skill, or the released version)
 - [ ] 4. Draft the skill: minimum content that passes the evals
 - [ ] 5. Validate: run scripts/validate_skill.py, fix, re-run until clean
 - [ ] 6. Run the evals on Haiku, Sonnet and Opus; compare with the baseline
@@ -96,7 +96,9 @@ Write the evals before the skill, so it solves observed gaps rather than imagine
 1. Run 3+ representative prompts **without** the skill and note what goes wrong.
 2. Turn those failures into cases in `evals/evals.json` with `must` and `must_not` facts.
 3. Add near-miss prompts that should **not** trigger the skill.
-4. Record the baseline score.
+4. Record the baseline score. For a new skill the baseline is no skill. For an update it's the
+   **released version**, snapshotted from its tag before any edit: almost anything beats no
+   skill, so only the release shows whether the change helped.
 
 Format, grading and running across models: [references/testing-and-evals.md](references/testing-and-evals.md).
 
@@ -124,6 +126,11 @@ numbers and hyphens only, no "anthropic" or "claude"; `description` non-empty, �
 characters, no XML tags; `compatibility` ≤ 500 characters; only the keys `name`, `description`,
 `license`, `allowed-tools`, `compatibility`, `metadata`. Rationale, card rendering and
 versioning rules: [references/frontmatter.md](references/frontmatter.md).
+
+Those six keys are the portable set. A skill that ships **only** in a Claude Code plugin can
+also use Claude Code's own fields (`when_to_use`, `disable-model-invocation`, `argument-hint`,
+`context: fork`, `paths`), `$ARGUMENTS` and `${CLAUDE_SKILL_DIR}`. One such key makes it
+Claude Code–only: no `.skill` or zip upload. Fields and rules are in the same reference.
 
 ### Description
 
@@ -159,6 +166,9 @@ skill-name/
 
 - **Concise.** Claude is already capable; add only what it doesn't know. Cut every sentence
   that doesn't change behaviour.
+- **Explain the why.** A reason lets Claude handle the case the rule didn't foresee; a bare
+  ALWAYS or NEVER in capitals doesn't. Reserve hard rules for fragile steps, and give them
+  their reason too.
 - **Degrees of freedom match fragility.** Open tasks get guidance and heuristics; fragile
   sequences get exact commands ("run exactly this; add no flags").
 - **One default, with an escape hatch**, not a menu of equal options.
@@ -202,19 +212,33 @@ python3 scripts/validate_skill.py /path/to/skill-folder
 ```
 
 It checks the frontmatter limits, body length, reference depth and contents lists, VERSION and
-plugin.json agreement, and file count, and prints each failure with the fix. Fix, re-run, and
-continue only when it reports clean. Then work through the judgement items in
+plugin.json agreement, and file count, and prints each failure with the fix. Add
+`--claude-code` for a Claude Code–only skill. Fix, re-run, and continue only when it reports
+clean. Then work through the judgement items in
 [references/validation-checklist.md](references/validation-checklist.md).
 
 ## 6–7. Test and iterate
 
-Run every eval case on Haiku, Sonnet and Opus, plus the no-skill baseline, with a fresh
-subagent per run (Claude Code). A skill that doesn't beat its baseline isn't earning its
-context. Generalise each failure into a fix to the skill, not a patch for that one prompt, and
-re-run. Then tune the description against 8–10 should-trigger and 8–10 near-miss prompts. Save
-results as `evals/results-YYYY-MM-DD.md`. In Claude.ai chat there are no subagents: run the
-cases yourself and skip the baseline. Full procedure:
-[references/testing-and-evals.md](references/testing-and-evals.md).
+In Claude Code, launch every run in one turn: each case on Haiku, Sonnet and Opus plus the
+baseline, a fresh subagent per run.
+
+- **Record tokens and time** from each run's completion notice as it arrives; nothing else
+  keeps them. A skill that passes at twice the tokens isn't earning its context either.
+- **Grade by script** whatever a script can check, and flag cases the baseline also passes:
+  they test nothing.
+- **Read the transcripts**, not only the answers. If several runs each wrote the same helper,
+  bundle one tested script in `scripts/`.
+- Generalise each failure into a fix to the skill, not a patch for that one prompt, and re-run.
+
+**Description: measure, don't guess.** Build about 20 realistic should-trigger and near-miss
+queries, then run Anthropic's `run_loop.py`. It runs each one through `claude -p` several
+times and picks the best description on a held-back set. Before blaming the wording, check
+Claude Code is showing the description at all: it cuts at 1,536 characters and drops
+descriptions of the least-used skills when too many are installed.
+
+Save results as `evals/results-YYYY-MM-DD.md`. In Claude.ai chat there are no subagents or
+`claude -p`: run the cases yourself, skip the baseline, and call trigger checks unmeasured.
+Full procedure and commands: [references/testing-and-evals.md](references/testing-and-evals.md).
 
 ## 8. Package and publish
 
@@ -303,6 +327,12 @@ three models. What changes is whose name is on it.
 - **cadenceux-plugin-creator** — owns the plugin container: hooks, install verbs, marketplace
   mechanics. It defers here for any SKILL.md a plugin bundles; this skill routes enforcement
   asks there.
+- **Anthropic's `skill-creator`** (`skill-creator@claude-plugins-official`) — supplies the
+  measured tools: `run_loop.py` for trigger testing, the benchmark aggregator and the review
+  viewer. This skill uses them where they are and keeps no copy. It owns CadenceUX conventions,
+  `validate_skill.py`, the `evals.json` format and packaging. Its own guidance is the general
+  default; where the two differ, this skill wins for CadenceUX and developer skills. When
+  Anthropic changes those scripts' options, update testing-and-evals.md.
 
 ## Licence
 
