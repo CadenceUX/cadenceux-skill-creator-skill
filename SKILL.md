@@ -16,7 +16,7 @@ compatibility: >-
   Cowork.
 metadata:
   author: Darrin Southern, CadenceUX
-  version: "2.4.0"
+  version: "2.4.1"
 ---
 
 # CadenceUX Skill Creator

@@ -99,7 +99,9 @@ with `--archive`):
 
 - **Fails** on secrets: private-key blocks, `"private_key"` fields, Google API keys, GitHub,
   Anthropic, OpenAI, Slack and AWS key formats, passwords inside URLs, and files that are keys
-  or client data by type (`.env`, `.pem`, `.p12`, `.pfx`, `.key`, `id_rsa`, `.fmp12`).
+  or client data by type (`.env`, `.pem`, `.p12`, `.pfx`, `.key`, `id_rsa`, `.fmp12`). A
+  password in a URL passes when the host is a reserved placeholder or a local socket path
+  (`%2Ftmp%2F…sock`), including inside a JSON string; `--self-test` checks that scan.
 - **Warns**, with file and line, on: email addresses, service-account emails, IP addresses in
   private ranges or in URLs, server-style hostnames (`fms.`, `filemaker.`, `admin.`, `vpn.`,
   `.local`, `.internal`, explicit ports, `fmnet://` addresses), analytics, tag and Search

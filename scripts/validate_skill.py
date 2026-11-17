@@ -6,6 +6,7 @@ Usage:
     python3 scripts/validate_skill.py --own /path/to/skill-folder
     python3 scripts/validate_skill.py --claude-code /path/to/skill-folder
     python3 scripts/validate_skill.py --archive /path/to/skill-name-vX.Y.Z.zip
+    python3 scripts/validate_skill.py --self-test
 
 --own is for a developer's own skill: it drops the CadenceUX-only checks (CC-BY-4.0 licence,
 cadenceux marketplace wording) and warns if CadenceUX branding has leaked into the skill.
@@ -18,6 +19,10 @@ references/sensitive-data-and-requirements.md.
 --claude-code is for a skill that ships only inside a Claude Code plugin: it also accepts
 Claude Code's own frontmatter keys (when_to_use, disable-model-invocation, argument-hint, …),
 which the Claude.ai upload rejects. --own and --claude-code can be combined.
+
+--self-test checks the password-in-URL scan against built-in lines: placeholder hosts, string
+escapes after the host and local socket paths pass; real hosts fail. Run it after changing
+the scan.
 
 Prints one line per check (PASS, WARN or FAIL, with the fix) and exits 1 if anything failed.
 Needs only the Python standard library. If PyYAML is installed it is used to parse the
@@ -154,6 +159,23 @@ def _host_is_placeholder(host):
     return bool(PLACEHOLDER_HOST.search(host.lower().rstrip(".")))
 
 
+# Lines are scanned raw, so a quoted URL keeps its string escapes: in JSON, "…@localhost" reads
+# …@localhost\" and the match ends on the backslash. A backslash that starts an escape (or ends
+# the match) closes the host; a stray one such as localhost\.evil.com doesn't.
+ESCAPE_END = re.compile(r"\\(?:[\"'\\/bfnrtu]|$)")
+
+
+def _url_login_is_placeholder(url):
+    """True if a user:password@host URL names a reserved host or a local socket, not a server."""
+    host = ESCAPE_END.split(url.split("@", 1)[1], 1)[0]
+    host = re.split(r"[/?#]", host, maxsplit=1)[0]
+    # A percent-encoded socket path (mongodb://user:pass@%2Ftmp%2Fmongodb-27017.sock) is a file
+    # on the same machine, not a network host.
+    if host.lower().startswith("%2f"):
+        return True
+    return _host_is_placeholder(host.split(":")[0])
+
+
 def load_terms():
     try:
         return [ln.strip().lower() for ln in TERMS_FILE.read_text(encoding="utf-8").splitlines()
@@ -173,7 +195,7 @@ def scan_text(rel, text, fails, warns):
         where = f"{rel}:{n}"
         for label, pat in SECRET_PATTERNS:
             for m in pat.finditer(line):
-                if label == "password inside a URL" and _host_is_placeholder(m.group(0).split("@", 1)[1].split("/")[0].split(":")[0]):
+                if label == "password inside a URL" and _url_login_is_placeholder(m.group(0)):
                     continue
                 fails.append(f"{where}: {label}")
         low = line.lower()
@@ -647,6 +669,37 @@ def check_archive(path):
     return finish()
 
 
+# Lines as they sit in skill files, with ":||" for "://" so this file doesn't flag itself.
+# True means the line must FAIL as a password inside a URL.
+SELF_TEST_URLS = [
+    ('"MBS(\\"MongoDB.SetURI\\"; $m; \\"mongodb:||tester:1234@localhost\\")"', False),
+    ('"\\"mongodb:||myuser:mypass@localhost/\\" & \\"?authSource=admin\\""', False),
+    ('"mongodb:||user:pass@%2Ftmp%2Fmongodb-27017.sock\\"', False),
+    ("mongodb:||user:pass@%2ftmp%2fmongodb-27017.sock/db", False),
+    ('"line one\\nftp:||demo:demo@files.example\\nline two"', False),
+    ("https:||user:secret@db.example.com:8443/path", False),
+    ('"mongodb:||admin:S3cret@cluster0.mongodb.net\\"', True),  # sensitive-ok
+    ("https:||admin:S3cret@cluster0.mongodb.net/db?x=1", True),  # sensitive-ok
+    ('"mongodb:||admin:S3cret@localhost.northwind.com\\"', True),  # sensitive-ok
+    ("mongodb:||admin:S3cret@localhost\\.northwind.com", True),  # sensitive-ok
+]
+
+
+def self_test():
+    """Check the password-in-URL scan against known lines; exit 1 on any miss."""
+    bad = 0
+    for raw, should_fail in SELF_TEST_URLS:
+        line = raw.replace(":||", "://")
+        fails = []
+        scan_text("self-test", line, fails, [])
+        failed = any(f.endswith("password inside a URL") for f in fails)
+        ok = failed == should_fail
+        bad += not ok
+        print(f"{'PASS' if ok else 'FAIL'}  {'fails' if failed else 'passes'}: {line}")
+    print(f"\n{'CLEAN' if not bad else 'NOT CLEAN'}: {bad} of {len(SELF_TEST_URLS)} wrong")
+    return 1 if bad else 0
+
+
 def finish():
     fails, warns = results.count("FAIL"), results.count("WARN")
     print(f"\n{'CLEAN' if not fails else 'NOT CLEAN'}: {fails} fail, {warns} warn")
@@ -656,6 +709,8 @@ def finish():
 if __name__ == "__main__":
     flags = [a for a in sys.argv[1:] if a.startswith("--")]
     paths = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if flags == ["--self-test"] and not paths:
+        sys.exit(self_test())
     known = {"--archive", "--own", "--claude-code"}
     if len(paths) != 1 or set(flags) - known or ("--archive" in flags and len(flags) > 1):
         print(__doc__)

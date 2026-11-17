@@ -1,5 +1,35 @@
 # CHANGELOG — cadenceux-skill-creator
 
+## [2.4.1] — 2026-11-18
+
+Two false positives in the validator's "password inside a URL" check. Released vendor examples
+that use `localhost` or a local socket failed as if they held a real server password.
+
+### Fixed
+
+- **String escapes after the host.** Lines are scanned raw, so in a JSON file
+  `"mongodb://tester:secret@localhost"` reads `…@localhost\"` and the host was taken as
+  `localhost\`, which isn't a reserved name. A backslash that starts a string escape (`\"`,
+  `\n`, `\/`, `\u`, …) now ends the host. A stray backslash inside a hostname doesn't, so
+  `localhost\.northwind.com` still fails.
+- **Local socket paths.** `mongodb://user:pass@%2Ftmp%2Fmongodb-27017.sock` names a socket file
+  on the same machine, not a network host. A host starting `%2F` is now treated as local.
+
+### Added
+
+- **`validate_skill.py --self-test`**: ten built-in lines covering both fixes, placeholder hosts
+  and real hosts. Exits 1 if any line is judged wrongly.
+
+### Checked
+
+- `--self-test` clean; the 2.4.0 code misjudged four of its ten lines.
+- `monkeybread-mbs-plugin` v2.1.0 release archive, downloaded from GitHub: 4 FAILs
+  (`references/group-10.json`, MongoDB examples) with 2.4.0, 0 with 2.4.1.
+- No change for the goya-be-plugin 1.4.2, beezwax-bbox-plugin 1.2.0, cadenceux-fms-security
+  1.1.1, claris-filemaker-pro 2.2.1 and cadenceux-skill-creator 2.4.0 archives; this repository
+  validates clean. Results: `evals/results-2026-11-18-v2.4.1.md`. No instruction text changed,
+  so the model evals weren't re-run.
+
 ## [2.4.0] — 2026-11-15
 
 Sensitive data and requirements. Neither this skill nor Anthropic's `skill-creator` checked a
