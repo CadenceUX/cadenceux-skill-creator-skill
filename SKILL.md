@@ -16,7 +16,7 @@ compatibility: >-
   Cowork.
 metadata:
   author: Darrin Southern, CadenceUX
-  version: "2.4.1"
+  version: "2.4.2"
 ---
 
 # CadenceUX Skill Creator
@@ -284,7 +284,8 @@ GitHub repo, `VERSION`, tagged release, `plugin.json`, the `cadenceux` marketpla
 release `.zip` and `.skill` archives, and the rule for amending an unshipped version:
 [references/packaging-and-release.md](references/packaging-and-release.md).
 
-Build the release archives from a clean checkout of the tag, never a working folder, and run
+Build the release archives from the tag with `cadenceux-github`'s `build_release.sh`, never
+from a working folder, and run
 `python3 scripts/validate_skill.py --archive <file>.zip` on each before attaching it: it fails
 an archive missing `VERSION`, `CHANGELOG.md` or `README.md`, or carrying `.claude-plugin/`
 (leave the manifest out and say why: the Claude app's skill upload rejects an archive with a
@@ -356,8 +357,9 @@ three models. What changes is whose name is on it.
 - **cadenceux-github** — publishes a developer's own skill from their GitHub account and
   reviews their published skills for unreleased changes. This skill builds and tests, then
   hands over; an update's content and evals start here and ship there; a review's content
-  questions come back here. Both describe release archives and the `.claude-plugin/`
-  exclusion: when the Claude app's upload rules change, update both. Its client-material
+  questions come back here. Both build release archives with its `build_release.sh` (one
+  builder, so the two can't drift): when the Claude app's upload rules change, update that
+  script and both skills' wording. Its client-material
   scrub and this skill's sensitive-data rules cover the same ground: the maintained home is
   `references/sensitive-data-and-requirements.md` here, plus the validator's scan; its
   "Fixing a committed secret" procedure stays there. Changing either triggers a check of the

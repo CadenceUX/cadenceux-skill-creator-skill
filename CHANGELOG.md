@@ -1,5 +1,27 @@
 # CHANGELOG — cadenceux-skill-creator
 
+## [2.4.2] — 2026-11-18
+
+One release-archive builder for both release paths.
+
+### Changed
+
+- **Release archives are built with `cadenceux-github`'s `build_release.sh`** (packaging
+  reference and step 8). It builds from the tag with `git archive`, honours `.gitattributes`
+  export-ignore and refuses mismatched versions, a wrong folder name or a plugin manifest. The
+  previous steps zipped a fresh clone, which kept `evals/` in the archive while
+  `cadenceux-github`'s builder left it out: two skills describing the same archive two ways.
+- Relationship with `cadenceux-github` names the shared builder as the thing to update when
+  the Claude app's upload rules change.
+
+### Verified
+
+- `build_release.sh 1.4.2` on the `goya-be-plugin` repo: four archives in `dist/`, git status
+  clean (`*.zip` and `*.skill` already ignored), `validate_skill.py --archive` clean.
+- `validate_skill.py` clean on this folder.
+- Eval on Haiku (`evals/results-2026-11-18-v2.4.2.md`): 2.4.2 gives the shared builder and the
+  same archive contents as `cadenceux-github`; 2.4.1 gave the old recipe that shipped `evals/`.
+
 ## [2.4.1] — 2026-11-18
 
 Two false positives in the validator's "password inside a URL" check. Released vendor examples

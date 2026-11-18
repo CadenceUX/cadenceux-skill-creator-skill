@@ -79,25 +79,31 @@ Build it from a clean checkout of the release tag, never from a working folder: 
 can be missing files. On 2026-10-12, nine releases had shipped without `VERSION`,
 `CHANGELOG.md` and `README.md` because they were zipped from stripped local copies.
 
-Leave out `.claude-plugin/` (the Claude app's skill upload rejects an archive that carries a
-plugin manifest; the marketplace reads it from the repo), `.git/`, `.gitignore`,
-`.gitattributes` and `maintainer/` (build tools, not part of the skill's job).
+Build with `build_release.sh` from the `cadenceux-github` skill: the one archive builder for
+CadenceUX and developer skills alike, so the two release paths can't drift apart. It reads
+the files **as committed at the tag** with `git archive`, so nothing uncommitted can leak in or
+go missing, and `.gitattributes` export-ignore leaves out `.claude-plugin/` (the Claude app's
+skill upload rejects an archive that carries a plugin manifest; the marketplace reads it from
+the repo), `evals/`, `maintainer/` and the git files. It refuses to build when the four version
+numbers disagree, the folder name doesn't match `name`, or a manifest would be inside.
 
-1. Tag and push the release first, then check out the tag into a temporary folder named after
-   the skill:
-   `git clone --depth 1 --branch vX.Y.Z https://github.com/CadenceUX/<repo>.git skill-name`
-2. Delete any existing archive with the same name (`zip` appends rather than replaces).
-3. `zip -r skill-name-vX.Y.Z.zip skill-name/ -x '*.DS_Store' -x '*/.git/*' -x '*/.claude-plugin/*' -x '*/.gitignore' -x '*/.gitattributes' -x '*/maintainer/*'`
-   Say why `.claude-plugin/` is left out when you report the build: the Claude app's skill
-   upload rejects an archive that carries a plugin manifest.
-4. `cp skill-name-vX.Y.Z.zip skill-name-vX.Y.Z.skill`
-5. `python3 scripts/validate_skill.py --archive skill-name-vX.Y.Z.zip` and continue only when it
-   reports clean: `SKILL.md`, `VERSION`, `CHANGELOG.md` and `README.md` present, versions
-   matching, no `.claude-plugin/`, the `.skill` copy identical.
-6. Copy them to unversioned names too (`skill-name.zip`, `skill-name.skill`) and attach all
-   four to the GitHub release (`gh release upload vX.Y.Z <files> --clobber`). The README links
-   to `releases/latest/download/skill-name.skill` and `.zip`, which only resolve to the newest
+1. Tag and push the release first.
+2. Run the builder from the repo, by its path in the installed `cadenceux-github` skill, or
+   download it once (`curl -fsSLO https://github.com/CadenceUX/cadenceux-github-skill/raw/main/scripts/build_release.sh`):
+   `bash build_release.sh X.Y.Z /path/to/repo`
+   It writes `dist/skill-name-vX.Y.Z.zip`, an identical `.skill`, and unversioned copies of
+   both (`dist/` holds only `*.zip` and `*.skill`, which the repo's `.gitignore` already
+   ignores). Say why `.claude-plugin/` is left out when you report the build.
+3. `python3 scripts/validate_skill.py --archive dist/skill-name-vX.Y.Z.zip` and continue only
+   when it reports clean: `SKILL.md`, `VERSION`, `CHANGELOG.md` and `README.md` present,
+   versions matching, no `.claude-plugin/`, the `.skill` copy identical.
+4. Attach all four to the GitHub release (`gh release create vX.Y.Z --verify-tag … <files>`, or
+   `gh release upload vX.Y.Z <files> --clobber`). The README links to
+   `releases/latest/download/skill-name.skill` and `.zip`, which only resolve to the newest
    release if every release carries the unversioned names.
+
+Until 2026-11-18 this checklist zipped a fresh clone instead, which kept `evals/` in the
+archive; releases from before then carry it. Either is valid to upload.
 
 The `.skill` file is the same zip renamed. The Claude desktop app registers the extension on
 macOS, so double-clicking it starts the install; Windows is unverified, so word it as "macOS".
