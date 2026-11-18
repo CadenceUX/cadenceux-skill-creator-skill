@@ -62,8 +62,7 @@ Every skill repo carries `.claude-plugin/plugin.json` so it installs as a plugin
 The marketplace lives at github.com/CadenceUX/cadenceux-skills
 (`.claude-plugin/marketplace.json`). Each entry points at a skill repo by HTTPS URL. When a
 skill is added, renamed or retired, update the marketplace entry, its README, and every page
-that lists the skills (cadenceux.com.au Skills page, llms.txt, the routing table in
-`fmp-dev-orchestrator`).
+that lists the skills (cadenceux.com.au Skills page, llms.txt, the routing table in `cadenceux-dx`).
 
 Install line users run:
 

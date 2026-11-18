@@ -58,7 +58,7 @@ The CadenceUX format (as used in `claris-filemaker-pro`):
 ```
 
 `must_not` entries come from real failures. Use `mode` when the skill behaves differently with
-an optional dependency (for example `adt` versus `standalone`). Trigger testing uses a separate
+an optional dependency (for example `adk` versus `standalone`). Trigger testing uses a separate
 file in Anthropic's format (see Description tuning).
 
 ## Choosing the baseline

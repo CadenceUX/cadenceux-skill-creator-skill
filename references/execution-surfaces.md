@@ -15,7 +15,7 @@ where the skill is loaded. Decide the intended surfaces during intent capture, b
 
 - **Chat-only skills** (typical for reference lookups): scripts are maintainer tools. Put them
   in `maintainer/` and say "run this locally to rebuild the catalog".
-- **Code-first skills** (live system access, such as FileMaker via ADT): write instructions as
+- **Code-first skills** (live system access, such as FileMaker via ADK): write instructions as
   commands Claude runs.
 - **Either**: write it conditionally: "If code execution is available, run
   `scripts/check.py` and read its output; otherwise give the developer the command and ask for

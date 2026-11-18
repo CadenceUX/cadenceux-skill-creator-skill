@@ -74,7 +74,7 @@ through the judgement items.
 - [ ] CHANGELOG entry says what changed and how it was verified
 - [ ] README: what it does, install (marketplace, `.skill`, zip), attribution line
 - [ ] Shipped status checked before choosing bump or amend
-- [ ] Marketplace, website, llms.txt and orchestrator updated if the skill set changed
+- [ ] Marketplace, website, llms.txt and `cadenceux-dx`'s routing table updated if the skill set changed
 
 ## Catalog and vendor skills
 - [ ] A version snapshot and a staleness check whose signal was proven to move

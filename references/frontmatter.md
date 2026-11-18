@@ -31,7 +31,7 @@ description: >-
   FileMaker Pro reference for … Use whenever … Not for …
 license: CC-BY-4.0
 compatibility: >-
-  Claude.ai, Claude Desktop, Cowork and Claude Code. ADT mode needs …
+  Claude.ai, Claude Desktop, Cowork and Claude Code. ADK mode needs …
 metadata:
   author: Darrin Southern, CadenceUX
   version: "2.1.0"
@@ -47,7 +47,7 @@ metadata:
 - **`metadata` holds `author` and `version` only.** Every metadata key becomes a visible card
   row, so catalog or plugin version data belongs in the reference JSON's own `meta` block.
 - **`compatibility` lists only surfaces the skill was designed and tested for**, plus any hard
-  requirement ("ADT mode needs the Claris ADT plugin").
+  requirement ("ADK mode needs the Claris ADK plugin").
 
 ## How Claude.ai renders the card
 

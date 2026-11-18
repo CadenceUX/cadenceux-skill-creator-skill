@@ -16,7 +16,7 @@ compatibility: >-
   Cowork.
 metadata:
   author: Darrin Southern, CadenceUX
-  version: "2.4.2"
+  version: "2.4.3"
 ---
 
 # CadenceUX Skill Creator
@@ -338,14 +338,16 @@ three models. What changes is whose name is on it.
 - README install section: the `cadenceux` marketplace first, then the double-click `.skill`
   file (macOS), then the Customize → Skills zip upload, both linked as
   `releases/latest/download/<name>.skill|zip`, with a note not to use GitHub's source zips.
-- FileMaker skills assume the Claris Agentic Development Toolkit (ADT) may be installed: where
-  ADT can read or change the file directly, defer to it rather than generating clipboard XML
+- FileMaker skills assume the Claris FileMaker Agentic Development Kit (ADK) may be installed: where
+  ADK can read or change the file directly, defer to it rather than generating clipboard XML
   or copy-paste snippets.
 - Every published skill carries a skill update self-check (the repo's `raw/main/VERSION`, once
-  per session) that defers to `fmp-dev-orchestrator`'s stack check when that's installed.
-- Preview programs: never publish preview version numbers (Claris ADT builds, preview FileMaker
-  Pro builds) in skill files, changelogs, evals or release notes. Report them to the user from
-  their own install only. The validator fails on an ADT version number.
+  per session) that defers to `cadenceux-dx`'s stack check when that's installed.
+- Preview programs: never publish preview version numbers (builds from a Claris preview
+  program, such as the ADT preview before ADK shipped, or preview FileMaker Pro builds) in skill
+  files, changelogs, evals or release notes. Report them to the user from their own install only.
+  Public releases (ADK, FileMaker 26.1) are published normally. The validator fails on an ADT
+  preview version number.
 - On every FileMaker skill release, update `versions.json` in `CadenceUX/cadenceux-skills`
   (the skill's new version; `tested_with` for public products only).
 

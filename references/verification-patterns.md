@@ -166,7 +166,7 @@ that would have caught it years earlier:
    look.
 5. **Sweep the whole ecosystem for the stale fact.** When a count or claim is corrected in one
    skill, grep every other skill in the family for the old value — `fmp-dev-orchestrator` and
-   `fmp-dev-full-script` (since retired) both quoted the wrong step count (and full-script quoted a *different*
+   `fmp-dev-full-script` (both since retired) quoted the wrong step count (and full-script quoted a *different*
    wrong count, "225+", that matched no source at all).
 6. **Concrete syntax examples in pattern skills are catalog claims too.** A boilerplate/rules
    skill that shows worked examples (like `fmp-dev-gate`'s AI script pattern) must have every

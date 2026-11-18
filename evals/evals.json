@@ -66,7 +66,7 @@
       "must": [
         "retired notice in the README",
         "archive the GitHub repo rather than delete it",
-        "remove it from the cadenceux marketplace, website, llms.txt and the orchestrator routing table",
+        "remove it from the cadenceux marketplace, website, llms.txt and the cadenceux-dx routing table",
         "grep other skills for references to it"
       ],
       "must_not": [
@@ -87,7 +87,7 @@
     },
     {
       "id": "upload-archive",
-      "prompt": "Build the release zip for fmp-dev-orchestrator 2.1.1 so I can upload it in the Claude desktop app.",
+      "prompt": "Build the release zip for cadenceux-dx 1.0.0 so I can upload it in the Claude desktop app.",
       "must": [
         "builds from a clean checkout of the release tag, not a working folder",
         "excludes .claude-plugin/ from the archive, and says why (the app's skill upload rejects a plugin manifest)",
